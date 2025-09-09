@@ -1,0 +1,67 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+cache_path = "cache"
+broadcast = "broadcast"
+
+# Compiler settings
+solc_version = "0.8.27"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 10000
+via_ir = true
+
+# Testing settings
+verbosity = 2
+gas_reports = ["*"]
+auto_detect_solc = false
+
+# Coverage settings
+coverage_debug_file = "coverage/debug.txt"
+
+# Formatter settings
+line_length = 120
+tab_width = 4
+bracket_spacing = true
+int_types = "short"
+
+# Additional paths
+remappings = [
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "@eigenlayer/contracts/=lib/eigenlayer-contracts/src/contracts/",
+    "@eigenlayer-middleware/=lib/eigenlayer-middleware/src/",
+    "@uniswap/v4-core/=lib/v4-periphery/lib/v4-core/",
+    "@uniswap/v4-periphery/=lib/v4-periphery/src/",
+    "@across-protocol/contracts/=lib/contracts/contracts/",
+    "forge-std/=lib/forge-std/src/",
+    "src/=src/",
+    "test/=test/",
+    "script/=script/"
+]
+
+# Fuzz testing
+fuzz = { runs = 1000 }
+invariant = { runs = 256, depth = 15, fail_on_revert = true }
+
+# RPC endpoints
+[rpc_endpoints]
+mainnet = "${ETHEREUM_RPC_URL}"
+sepolia = "${SEPOLIA_RPC_URL}"
+arbitrum = "${ARBITRUM_RPC_URL}"
+arbitrum_sepolia = "${ARBITRUM_SEPOLIA_RPC_URL}"
+polygon = "${POLYGON_RPC_URL}"
+polygon_mumbai = "${POLYGON_MUMBAI_RPC_URL}"
+base = "${BASE_RPC_URL}"
+base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
+optimism = "${OPTIMISM_RPC_URL}"
+optimism_sepolia = "${OPTIMISM_SEPOLIA_RPC_URL}"
+
+# Etherscan API keys for contract verification
+[etherscan]
+mainnet = { key = "${ETHERSCAN_API_KEY}" }
+sepolia = { key = "${ETHERSCAN_API_KEY}" }
+arbitrum = { key = "${ARBISCAN_API_KEY}" }
+polygon = { key = "${POLYGONSCAN_API_KEY}" }
+base = { key = "${BASESCAN_API_KEY}" }
+optimism = { key = "${OPTIMISM_ETHERSCAN_API_KEY}" }
