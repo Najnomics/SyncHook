@@ -16,3 +16,6 @@
 [submodule "lib/eigenlayer-middleware"]
 	path = lib/eigenlayer-middleware
 	url = https://github.com/Layr-Labs/eigenlayer-middleware
+[submodule "lib/v4-core"]
+	path = lib/v4-core
+	url = https://github.com/Uniswap/v4-core

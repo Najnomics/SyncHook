@@ -38,7 +38,7 @@ cd synchook
 
 #### Go Dependencies
 ```bash
-cd operator
+cd AVS
 go mod tidy
 ```
 
@@ -59,7 +59,7 @@ forge install
 ```bash
 # Copy example environment files
 cp .env.example .env
-cp operator/.env.example operator/.env
+cp AVS/.env.example AVS/.env
 cp frontend/.env.example frontend/.env
 ```
 
@@ -139,9 +139,9 @@ forge script script/Deploy.s.sol:DeployScript --rpc-url $POLYGON_RPC_URL --broad
 
 ## Go Operator Deployment
 
-### 1. Build Operator
+### 1. Build AVS Service
 ```bash
-cd operator
+cd AVS
 go build -o bin/operator cmd/operator/main.go
 go build -o bin/aggregator cmd/aggregator/main.go
 ```
@@ -150,7 +150,7 @@ go build -o bin/aggregator cmd/aggregator/main.go
 
 #### Create Configuration Files
 ```bash
-# operator/config/operator.yaml
+# AVS/config/operator.yaml
 ethRpcUrl: "https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY"
 arbitrumRpcUrl: "https://arb-mainnet.g.alchemy.com/v2/YOUR_API_KEY"
 polygonRpcUrl: "https://polygon-mainnet.g.alchemy.com/v2/YOUR_API_KEY"
@@ -235,24 +235,24 @@ netlify deploy --prod --dir=dist
 version: '3.8'
 services:
   operator:
-    build: ./operator
+    build: ./AVS
     ports:
       - "8080:8080"
       - "9090:9090"
     volumes:
-      - ./operator/config:/app/config
-      - ./operator/keys:/app/keys
+      - ./AVS/config:/app/config
+      - ./AVS/keys:/app/keys
     environment:
       - CONFIG_PATH=/app/config/operator.yaml
     restart: unless-stopped
 
   aggregator:
-    build: ./operator
+    build: ./AVS
     command: ./bin/aggregator
     ports:
       - "8081:8080"
     volumes:
-      - ./operator/config:/app/config
+      - ./AVS/config:/app/config
     environment:
       - CONFIG_PATH=/app/config/aggregator.yaml
     restart: unless-stopped

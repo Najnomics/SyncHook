@@ -40,10 +40,10 @@ SyncHook is a comprehensive cross-chain liquidity synchronization and optimizati
   - `getRebalancingStatus`: Tracks rebalancing progress
   - `getRebalancingHistory`: Provides historical data
 
-#### 5. Go-based Operator System
+#### 5. Go-based AVS System
 - **Purpose**: Backend system for state aggregation, validation, and execution
 - **Components**:
-  - **Operator**: Main operator service that processes tasks
+  - **AVS Service**: Main AVS service that processes tasks and manages operators
   - **Aggregator**: Aggregates state data from multiple chains
   - **Blockchain Clients**: Ethereum, Arbitrum, Polygon clients
   - **Monitoring**: Metrics, alerts, and performance tracking

@@ -44,8 +44,8 @@ This guide provides comprehensive instructions for running and managing SyncHook
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/your-org/synchook.git
-cd synchook/operator
+git clone https://github.com/synchook/synchook.git
+cd synchook/AVS
 ```
 
 ### 2. Install Dependencies
@@ -53,7 +53,7 @@ cd synchook/operator
 go mod tidy
 ```
 
-### 3. Build Operator
+### 3. Build AVS Service
 ```bash
 go build -o bin/operator cmd/operator/main.go
 go build -o bin/aggregator cmd/aggregator/main.go
@@ -212,8 +212,8 @@ After=network.target
 [Service]
 Type=simple
 User=synchook
-WorkingDirectory=/opt/synchook/operator
-ExecStart=/opt/synchook/operator/bin/operator --config config/operator.yaml
+WorkingDirectory=/opt/synchook/AVS
+ExecStart=/opt/synchook/AVS/bin/operator --config config/operator.yaml
 Restart=always
 RestartSec=10
 
@@ -319,7 +319,7 @@ grafana-server --config=monitoring/grafana.ini
 ```bash
 # Configure logrotate
 sudo tee /etc/logrotate.d/synchook-operator > /dev/null <<EOF
-/var/log/synchook-operator/*.log {
+/var/log/synchook-avs/*.log {
     daily
     missingok
     rotate 7
