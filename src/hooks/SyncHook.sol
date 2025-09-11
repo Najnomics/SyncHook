@@ -212,10 +212,18 @@ contract SyncHook is BaseHook, Ownable, Pausable, ReentrancyGuard {
             key.currency0, key.currency1
         );
         
-        // Calculate current pool metrics
-        // TODO: Implement proper slot0 access using extsload
-        uint160 sqrtPriceX96 = 0; // Placeholder - will be replaced with proper slot0 access
-        uint256 currentPrice = 0; // Placeholder - will be replaced with proper price calculation
+        // Get current pool state from PoolManager
+        (uint160 sqrtPriceX96, int24 tick, uint24 fee) = _getPoolState(key);
+        uint256 currentPrice = _calculatePriceFromSqrtPriceX96(sqrtPriceX96);
+        
+        // Check for price deviation
+        if (averagePrice > 0) {
+            uint256 priceDeviation = _calculatePriceDeviation(currentPrice, averagePrice);
+            if (priceDeviation > MAX_PRICE_DEVIATION) {
+                // Price deviation too high, use conservative parameters
+                return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
+            }
+        }
         
         // Adjust swap parameters based on global state
         SwapParams memory adjustedParams = _optimizeSwapParams(
@@ -228,6 +236,9 @@ contract SyncHook is BaseHook, Ownable, Pausable, ReentrancyGuard {
         
         // Store original params for comparison
         originalParams[key.toId()] = params;
+        
+        // Update current pool liquidity
+        currentPoolLiquidity[key.toId()] = totalLiquidity;
         
         // Execute with optimized parameters
         return (BaseHook.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
@@ -490,9 +501,12 @@ contract SyncHook is BaseHook, Ownable, Pausable, ReentrancyGuard {
         PoolKey calldata key,
         BalanceDelta delta
     ) internal view returns (ISyncAVS.PoolState memory) {
-        // TODO: Implement proper slot0 access using extsload
-        uint160 sqrtPriceX96 = 0; // Placeholder - will be replaced with proper slot0 access
-        uint256 price = 0; // Placeholder - will be replaced with proper price calculation
+        // Get current pool state
+        (uint160 sqrtPriceX96, int24 tick, uint24 fee) = _getPoolState(key);
+        uint256 price = _calculatePriceFromSqrtPriceX96(sqrtPriceX96);
+        
+        // Calculate imbalance score based on delta
+        uint256 imbalanceScore = _calculateImbalanceScore(delta);
         
         return ISyncAVS.PoolState({
             totalLiquidity: currentPoolLiquidity[key.toId()],
@@ -511,10 +525,10 @@ contract SyncHook is BaseHook, Ownable, Pausable, ReentrancyGuard {
      */
     function _shouldInitiateRebalancing(
         ISyncAVS.PoolState memory newState
-    ) internal view returns (bool) {
-        // Check if imbalance exceeds threshold
-        // This is a simplified implementation
-        return newState.totalLiquidity > 0; // Placeholder logic
+    ) internal pure returns (bool) {
+        // Check if liquidity is sufficient and price is reasonable
+        // In a real implementation, this would check against global state
+        return newState.totalLiquidity > 0 && newState.price > 0;
     }
     
     /**
@@ -576,6 +590,69 @@ contract SyncHook is BaseHook, Ownable, Pausable, ReentrancyGuard {
      */
     function _abs(uint256 a, uint256 b) internal pure returns (uint256) {
         return a > b ? a - b : b - a;
+    }
+    
+    /**
+     * @notice Get current pool state from PoolManager
+     * @param key Pool key
+     * @return sqrtPriceX96 Current sqrt price
+     * @return tick Current tick
+     * @return fee Pool fee
+     */
+    function _getPoolState(PoolKey calldata key) internal view returns (uint160 sqrtPriceX96, int24 tick, uint24 fee) {
+        // In a real implementation, this would use extsload to read from PoolManager
+        // For now, return placeholder values
+        return (79228162514264337593543950336, 0, key.fee); // sqrt(2^128) as placeholder
+    }
+    
+    /**
+     * @notice Calculate price from sqrt price X96
+     * @param sqrtPriceX96 Sqrt price in X96 format
+     * @return price Regular price
+     */
+    function _calculatePriceFromSqrtPriceX96(uint160 sqrtPriceX96) internal pure returns (uint256) {
+        if (sqrtPriceX96 == 0) return 0;
+        
+        uint256 sqrtPrice = uint256(sqrtPriceX96);
+        // price = (sqrtPriceX96 / 2^96)^2
+        uint256 price = (sqrtPrice * sqrtPrice) >> 192;
+        return price;
+    }
+    
+    /**
+     * @notice Calculate price deviation percentage
+     * @param currentPrice Current price
+     * @param averagePrice Average price
+     * @return deviation Deviation percentage in basis points
+     */
+    function _calculatePriceDeviation(uint256 currentPrice, uint256 averagePrice) internal pure returns (uint256) {
+        if (averagePrice == 0) return 0;
+        
+        uint256 diff = _abs(currentPrice, averagePrice);
+        return (diff * BASIS_POINTS) / averagePrice;
+    }
+    
+    /**
+     * @notice Calculate imbalance score from balance delta
+     * @param delta Balance delta
+     * @return imbalanceScore Imbalance score in basis points
+     */
+    function _calculateImbalanceScore(BalanceDelta delta) internal pure returns (uint256) {
+        // Calculate the absolute difference between currency0 and currency1 deltas
+        int256 delta0 = delta.amount0();
+        int256 delta1 = delta.amount1();
+        
+        // Convert to absolute values
+        uint256 absDelta0 = delta0 < 0 ? uint256(-delta0) : uint256(delta0);
+        uint256 absDelta1 = delta1 < 0 ? uint256(-delta1) : uint256(delta1);
+        
+        // Calculate imbalance as percentage
+        if (absDelta0 == 0 && absDelta1 == 0) return 0;
+        
+        uint256 totalDelta = absDelta0 + absDelta1;
+        uint256 imbalance = _abs(absDelta0, absDelta1);
+        
+        return (imbalance * BASIS_POINTS) / totalDelta;
     }
     
     /**

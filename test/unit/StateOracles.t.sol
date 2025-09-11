@@ -13,6 +13,7 @@ contract StateOraclesTest is Test {
     address public oracle = address(0x2000);
     
     function setUp() public {
+        vm.prank(owner);
         stateOracles = new StateOracles();
     }
     
@@ -23,9 +24,11 @@ contract StateOraclesTest is Test {
     
     function test_AddOracle() public {
         // First authorize the oracle
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
         
         // Add oracle for token
+        vm.prank(owner);
         stateOracles.addOracle(
             token,
             oracle,
@@ -47,6 +50,7 @@ contract StateOraclesTest is Test {
     
     function test_AddOracleUnauthorized() public {
         vm.expectRevert("Oracle not authorized");
+        vm.prank(owner);
         stateOracles.addOracle(
             token,
             oracle,
@@ -56,9 +60,11 @@ contract StateOraclesTest is Test {
     }
     
     function test_AddOracleInvalidToken() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
         
         vm.expectRevert("Invalid token");
+        vm.prank(owner);
         stateOracles.addOracle(
             address(0),
             oracle,
@@ -68,9 +74,11 @@ contract StateOraclesTest is Test {
     }
     
     function test_AddOracleInvalidWeight() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
         
         vm.expectRevert("Invalid weight");
+        vm.prank(owner);
         stateOracles.addOracle(
             token,
             oracle,
@@ -80,26 +88,34 @@ contract StateOraclesTest is Test {
     }
     
     function test_AddOracleMaxOracles() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
         
         // Add max oracles
-        for (uint256 i = 0; i < 5; i++) {
+        for (uint256 i = 1; i <= 5; i++) {
             address newOracle = address(uint160(0x2000 + i));
+            vm.prank(owner);
             stateOracles.authorizeOracle(newOracle);
+            vm.prank(owner);
             stateOracles.addOracle(token, newOracle, 1e18, 8);
         }
         
         // Try to add one more
         address extraOracle = address(0x3000);
+        vm.prank(owner);
         stateOracles.authorizeOracle(extraOracle);
         vm.expectRevert("Max oracles reached");
+        vm.prank(owner);
         stateOracles.addOracle(token, extraOracle, 1e18, 8);
     }
     
     function test_RemoveOracle() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
+        vm.prank(owner);
         stateOracles.addOracle(token, oracle, 1e18, 8);
         
+        vm.prank(owner);
         stateOracles.removeOracle(token, 0);
         
         StateOracles.OracleConfig[] memory oracles = stateOracles.getTokenOracles(token);
@@ -107,9 +123,12 @@ contract StateOraclesTest is Test {
     }
     
     function test_UpdateOracleWeight() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
+        vm.prank(owner);
         stateOracles.addOracle(token, oracle, 1e18, 8);
         
+        vm.prank(owner);
         stateOracles.updateOracleWeight(token, 0, 2e18);
         
         StateOracles.OracleConfig[] memory oracles = stateOracles.getTokenOracles(token);
@@ -117,7 +136,9 @@ contract StateOraclesTest is Test {
     }
     
     function test_ToggleOracleActive() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
+        vm.prank(owner);
         stateOracles.addOracle(token, oracle, 1e18, 8);
         
         // Initially active
@@ -125,6 +146,7 @@ contract StateOraclesTest is Test {
         assertTrue(oracles[0].isActive);
         
         // Toggle to inactive
+        vm.prank(owner);
         stateOracles.toggleOracleActive(token, 0);
         oracles = stateOracles.getTokenOracles(token);
         assertFalse(oracles[0].isActive);
@@ -136,11 +158,13 @@ contract StateOraclesTest is Test {
     }
     
     function test_AuthorizeOracle() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
         assertTrue(stateOracles.authorizedOracles(oracle));
     }
     
     function test_DeauthorizeOracle() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
         assertTrue(stateOracles.authorizedOracles(oracle));
         
@@ -149,7 +173,9 @@ contract StateOraclesTest is Test {
     }
     
     function test_UpdatePrice() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
+        vm.prank(owner);
         stateOracles.addOracle(token, oracle, 1e18, 8);
         
         stateOracles.updatePrice(token);
@@ -157,7 +183,9 @@ contract StateOraclesTest is Test {
     }
     
     function test_UpdateLiquidity() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
+        vm.prank(owner);
         stateOracles.addOracle(token, oracle, 1e18, 8);
         
         stateOracles.updateLiquidity(
@@ -170,7 +198,9 @@ contract StateOraclesTest is Test {
     }
     
     function test_GetPrice() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
+        vm.prank(owner);
         stateOracles.addOracle(token, oracle, 1e18, 8);
         
         // Update price first
@@ -183,7 +213,9 @@ contract StateOraclesTest is Test {
     }
     
     function test_GetLiquidity() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
+        vm.prank(owner);
         stateOracles.addOracle(token, oracle, 1e18, 8);
         
         // Update liquidity first
@@ -208,7 +240,9 @@ contract StateOraclesTest is Test {
     }
     
     function test_GetSupportedTokens() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
+        vm.prank(owner);
         stateOracles.addOracle(token, oracle, 1e18, 8);
         
         address[] memory tokens = stateOracles.getSupportedTokens();
@@ -217,7 +251,9 @@ contract StateOraclesTest is Test {
     }
     
     function test_IsPriceFresh() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
+        vm.prank(owner);
         stateOracles.addOracle(token, oracle, 1e18, 8);
         
         // Update price
@@ -228,11 +264,13 @@ contract StateOraclesTest is Test {
     }
     
     function test_Pause() public {
+        vm.prank(owner);
         stateOracles.pause();
         // Should not revert
     }
     
     function test_Unpause() public {
+        vm.prank(owner);
         stateOracles.pause();
         stateOracles.unpause();
         // Should not revert
@@ -241,14 +279,18 @@ contract StateOraclesTest is Test {
     function test_OnlyOwner() public {
         vm.prank(user);
         vm.expectRevert();
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
     }
     
     function test_InvalidOracleIndex() public {
+        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
+        vm.prank(owner);
         stateOracles.addOracle(token, oracle, 1e18, 8);
         
         vm.expectRevert("Invalid oracle index");
+        vm.prank(owner);
         stateOracles.removeOracle(token, 1);
     }
     

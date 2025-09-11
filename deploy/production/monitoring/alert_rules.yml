@@ -1,0 +1,153 @@
+groups:
+  - name: synchook_alerts
+    rules:
+      # Service Health Alerts
+      - alert: SyncHookAVSDown
+        expr: up{job="synchook-avs"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SyncHook AVS service is down"
+          description: "SyncHook AVS service has been down for more than 1 minute"
+
+      - alert: SyncHookAVSHighErrorRate
+        expr: rate(http_requests_total{job="synchook-avs",status=~"5.."}[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate in SyncHook AVS"
+          description: "Error rate is {{ $value }} errors per second"
+
+      # Database Alerts
+      - alert: PostgreSQLDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL database is down"
+          description: "PostgreSQL database has been down for more than 1 minute"
+
+      - alert: PostgreSQLHighConnections
+        expr: pg_stat_database_numbackends / pg_settings_max_connections > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High PostgreSQL connection usage"
+          description: "PostgreSQL connection usage is {{ $value }}%"
+
+      # Redis Alerts
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis cache is down"
+          description: "Redis cache has been down for more than 1 minute"
+
+      - alert: RedisHighMemoryUsage
+        expr: redis_memory_used_bytes / redis_config_maxmemory > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis memory usage is {{ $value }}%"
+
+      # System Resource Alerts
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}%"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}%"
+
+      - alert: DiskSpaceLow
+        expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space"
+          description: "Disk space usage is {{ $value }}%"
+
+      # Business Logic Alerts
+      - alert: RebalancingFailed
+        expr: increase(synchook_rebalancing_failed_total[1h]) > 5
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Multiple rebalancing failures"
+          description: "{{ $value }} rebalancing operations failed in the last hour"
+
+      - alert: CrossChainTransferFailed
+        expr: increase(synchook_cross_chain_transfer_failed_total[1h]) > 3
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Multiple cross-chain transfer failures"
+          description: "{{ $value }} cross-chain transfers failed in the last hour"
+
+      - alert: StateUpdateFailed
+        expr: increase(synchook_state_update_failed_total[1h]) > 10
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Multiple state update failures"
+          description: "{{ $value }} state updates failed in the last hour"
+
+      # Security Alerts
+      - alert: UnauthorizedAccessAttempt
+        expr: increase(synchook_unauthorized_access_total[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Unauthorized access attempt detected"
+          description: "{{ $value }} unauthorized access attempts in the last 5 minutes"
+
+      - alert: EmergencyModeActivated
+        expr: synchook_emergency_mode_active == 1
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Emergency mode activated"
+          description: "SyncHook emergency mode has been activated"
+
+      # Performance Alerts
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time"
+          description: "95th percentile response time is {{ $value }}s"
+
+      - alert: LowThroughput
+        expr: rate(http_requests_total{job="synchook-avs"}[5m]) < 0.1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low request throughput"
+          description: "Request rate is {{ $value }} requests per second"

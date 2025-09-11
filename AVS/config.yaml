@@ -1,0 +1,68 @@
+server:
+  host: "0.0.0.0"
+  port: 8080
+
+database:
+  host: "localhost"
+  port: 5432
+  user: "synchook"
+  password: "" # Set via DATABASE_PASSWORD env var
+  dbname: "synchook"
+  sslmode: "disable"
+
+chains:
+  - id: 1
+    name: "Ethereum"
+    rpc_url: "https://mainnet.infura.io/v3/YOUR_INFURA_KEY"
+    ws_url: "wss://mainnet.infura.io/ws/v3/YOUR_INFURA_KEY"
+    private_key: "" # Set via ETHEREUM_PRIVATE_KEY env var
+    sync_avs: "0x1234567890abcdef1234567890abcdef12345678"
+    pool_manager: "0x1234567890abcdef1234567890abcdef12345678"
+    sync_hook: "0x1234567890abcdef1234567890abcdef12345678"
+    confirmations: 12
+
+  - id: 42161
+    name: "Arbitrum"
+    rpc_url: "https://arbitrum-mainnet.infura.io/v3/YOUR_INFURA_KEY"
+    ws_url: "wss://arbitrum-mainnet.infura.io/ws/v3/YOUR_INFURA_KEY"
+    private_key: "" # Set via ARBITRUM_PRIVATE_KEY env var
+    sync_avs: "0x1234567890abcdef1234567890abcdef12345678"
+    pool_manager: "0x1234567890abcdef1234567890abcdef12345678"
+    sync_hook: "0x1234567890abcdef1234567890abcdef12345678"
+    confirmations: 1
+
+  - id: 10
+    name: "Optimism"
+    rpc_url: "https://optimism-mainnet.infura.io/v3/YOUR_INFURA_KEY"
+    ws_url: "wss://optimism-mainnet.infura.io/ws/v3/YOUR_INFURA_KEY"
+    private_key: "" # Set via OPTIMISM_PRIVATE_KEY env var
+    sync_avs: "0x1234567890abcdef1234567890abcdef12345678"
+    pool_manager: "0x1234567890abcdef1234567890abcdef12345678"
+    sync_hook: "0x1234567890abcdef1234567890abcdef12345678"
+    confirmations: 1
+
+eigenlayer:
+  registry_coordinator: "0x1234567890abcdef1234567890abcdef12345678"
+  stake_registry: "0x1234567890abcdef1234567890abcdef12345678"
+  bls_apk_registry: "0x1234567890abcdef1234567890abcdef12345678"
+  index_registry: "0x1234567890abcdef1234567890abcdef12345678"
+  operator_id: 1
+  quorum_number: 0
+
+across:
+  spoke_pool: "0x1234567890abcdef1234567890abcdef12345678"
+  hub_pool: "0x1234567890abcdef1234567890abcdef12345678"
+  relayer_fee_pct: "0.001" # 0.1%
+  max_gas_price: "20000000000" # 20 gwei
+
+log:
+  level: "info"
+  format: "json"
+  output: "stdout"
+
+operator:
+  state_update_interval: "30s"
+  rebalance_threshold: 0.2 # 20%
+  max_rebalance_amount: "1000000000000000000000" # 1000 ETH
+  min_rebalance_amount: "1000000000000000000" # 1 ETH
+  rebalance_cooldown: "300s" # 5 minutes

@@ -1,2 +1,4 @@
 # Ignore context folder
 context/
+
+lib/
