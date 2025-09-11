@@ -134,6 +134,27 @@ contract SyncHookTest is Test {
     }
     
     function test_BeforeRemoveLiquidity() public {
+        // First add some liquidity to the pool
+        ModifyLiquidityParams memory addParams = ModifyLiquidityParams({
+            tickLower: -100,
+            tickUpper: 100,
+            liquidityDelta: 2000e18,
+            salt: bytes32(0)
+        });
+        
+        BalanceDelta addDelta = toBalanceDelta(int128(2000e18), int128(4000e18));
+        BalanceDelta addFeesAccrued = toBalanceDelta(0, 0);
+        
+        syncHook.testAfterAddLiquidity(
+            address(this),
+            poolKey,
+            addParams,
+            addDelta,
+            addFeesAccrued,
+            ""
+        );
+        
+        // Now test removing liquidity
         ModifyLiquidityParams memory params = ModifyLiquidityParams({
             tickLower: -100,
             tickUpper: 100,

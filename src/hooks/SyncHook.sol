@@ -334,7 +334,11 @@ contract SyncHook is BaseHook, Ownable, Pausable, ReentrancyGuard {
         // Update pool liquidity tracking
         if (params.liquidityDelta < 0) {
             uint256 liquidityRemoved = uint256(-int256(params.liquidityDelta));
-            currentPoolLiquidity[key.toId()] -= liquidityRemoved;
+            if (currentPoolLiquidity[key.toId()] >= liquidityRemoved) {
+                currentPoolLiquidity[key.toId()] -= liquidityRemoved;
+            } else {
+                currentPoolLiquidity[key.toId()] = 0;
+            }
         }
         
         // Calculate new pool state
