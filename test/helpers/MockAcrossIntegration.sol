@@ -4,7 +4,7 @@ pragma solidity ^0.8.27;
 import {IAcrossIntegration} from "../../src/hooks/interfaces/IAcrossIntegration.sol";
 import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 
-abstract contract MockAcrossIntegration is IAcrossIntegration {
+contract MockAcrossIntegration is IAcrossIntegration {
     function requestRebalancing(
         address token,
         address counterToken,

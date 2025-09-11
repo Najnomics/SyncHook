@@ -118,6 +118,16 @@ contract SyncHook is BaseHook, Ownable, Pausable, ReentrancyGuard {
     event EmergencyTriggered(string reason);
     event EmergencyCleared();
     
+    event RebalancingOpportunityDetected(
+        PoolId indexed poolId,
+        string reason
+    );
+    
+    event EmergencyConditionApproaching(
+        PoolId indexed poolId,
+        string reason
+    );
+    
     /*//////////////////////////////////////////////////////////////
 
                                MODIFIERS
@@ -283,8 +293,9 @@ contract SyncHook is BaseHook, Ownable, Pausable, ReentrancyGuard {
         PoolKey calldata key,
         ModifyLiquidityParams calldata params,
         BalanceDelta delta,
+        BalanceDelta feesAccrued,
         bytes calldata hookData
-    ) internal whenNotPaused whenNotEmergency returns (bytes4) {
+    ) internal override whenNotPaused whenNotEmergency returns (bytes4, BalanceDelta) {
         // Update pool liquidity tracking
         if (params.liquidityDelta > 0) {
             currentPoolLiquidity[key.toId()] += uint256(int256(params.liquidityDelta));
@@ -300,7 +311,7 @@ contract SyncHook is BaseHook, Ownable, Pausable, ReentrancyGuard {
             _generateStateSignature(newState)
         );
         
-        return BaseHook.afterAddLiquidity.selector;
+        return (BaseHook.afterAddLiquidity.selector, feesAccrued);
     }
     
     /**
@@ -317,8 +328,9 @@ contract SyncHook is BaseHook, Ownable, Pausable, ReentrancyGuard {
         PoolKey calldata key,
         ModifyLiquidityParams calldata params,
         BalanceDelta delta,
+        BalanceDelta feesAccrued,
         bytes calldata hookData
-    ) internal whenNotPaused whenNotEmergency returns (bytes4) {
+    ) internal override whenNotPaused whenNotEmergency returns (bytes4, BalanceDelta) {
         // Update pool liquidity tracking
         if (params.liquidityDelta < 0) {
             uint256 liquidityRemoved = uint256(-int256(params.liquidityDelta));
@@ -335,7 +347,87 @@ contract SyncHook is BaseHook, Ownable, Pausable, ReentrancyGuard {
             _generateStateSignature(newState)
         );
         
-        return BaseHook.afterRemoveLiquidity.selector;
+        return (BaseHook.afterRemoveLiquidity.selector, feesAccrued);
+    }
+    
+    /**
+     * @notice Called before adding liquidity to validate the operation
+     * @param sender The sender adding liquidity
+     * @param key The pool key
+     * @param params Liquidity modification parameters
+     * @param hookData Additional hook data
+     * @return bytes4 Hook selector
+     */
+    function _beforeAddLiquidity(
+        address sender,
+        PoolKey calldata key,
+        ModifyLiquidityParams calldata params,
+        bytes calldata hookData
+    ) internal override whenNotPaused whenNotEmergency returns (bytes4) {
+        // Validate liquidity addition parameters
+        require(params.liquidityDelta > 0, "Invalid liquidity delta");
+        require(params.tickLower < params.tickUpper, "Invalid tick range");
+        
+        // Check if pool is in emergency state
+        require(!emergencyBreaker, "Pool in emergency mode");
+        
+        // Validate against global state if available
+        (bool shouldTrigger, , , ) = syncAVS.shouldTriggerRebalancing(
+            key.currency0,
+            key.currency1
+        );
+        
+        if (shouldTrigger) {
+            // Log rebalancing opportunity but allow liquidity addition
+            emit RebalancingOpportunityDetected(
+                key.toId(),
+                "Liquidity addition during rebalancing opportunity"
+            );
+        }
+        
+        return BaseHook.beforeAddLiquidity.selector;
+    }
+    
+    /**
+     * @notice Called before removing liquidity to ensure safe removal
+     * @param sender The sender removing liquidity
+     * @param key The pool key
+     * @param params Liquidity modification parameters
+     * @param hookData Additional hook data
+     * @return bytes4 Hook selector
+     */
+    function _beforeRemoveLiquidity(
+        address sender,
+        PoolKey calldata key,
+        ModifyLiquidityParams calldata params,
+        bytes calldata hookData
+    ) internal override whenNotPaused whenNotEmergency returns (bytes4) {
+        // Validate liquidity removal parameters
+        require(params.liquidityDelta < 0, "Invalid liquidity delta for removal");
+        require(params.tickLower < params.tickUpper, "Invalid tick range");
+        
+        // Check if pool is in emergency state
+        require(!emergencyBreaker, "Pool in emergency mode");
+        
+        // Check if removal would cause critical liquidity shortage
+        uint256 currentLiquidity = currentPoolLiquidity[key.toId()];
+        uint256 removalAmount = uint256(-int256(params.liquidityDelta));
+        
+        require(
+            currentLiquidity >= removalAmount,
+            "Insufficient liquidity for removal"
+        );
+        
+        // Check if removal would trigger emergency conditions
+        if (currentLiquidity - removalAmount < currentLiquidity * 10 / 100) {
+            // Less than 10% liquidity remaining - warn but allow
+            emit EmergencyConditionApproaching(
+                key.toId(),
+                "Critical liquidity level after removal"
+            );
+        }
+        
+        return BaseHook.beforeRemoveLiquidity.selector;
     }
     
     /*//////////////////////////////////////////////////////////////

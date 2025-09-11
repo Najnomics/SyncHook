@@ -1,0 +1,67 @@
+# SyncHook AVS Aggregator Configuration
+
+# Server Configuration
+server_ip_port_address: "localhost:8090"
+enable_grpc: true
+enable_http: true
+http_port: 8080
+
+# EigenLayer Configuration
+registry_coordinator_address: "0x0000000000000000000000000000000000000000"
+operator_state_retriever_address: "0x0000000000000000000000000000000000000000"
+
+# Ethereum Configuration
+eth_rpc_url: "http://localhost:8545"
+eth_ws_url: "ws://localhost:8546"
+
+# SyncHook Specific Configuration
+sync_avs_address: "0x0000000000000000000000000000000000000000"
+across_address: "0x0000000000000000000000000000000000000000"
+
+# Task Management
+task_timeout: 300  # seconds
+max_concurrent_tasks: 100
+task_retry_attempts: 3
+task_retry_delay: 30  # seconds
+
+# State Aggregation
+state_update_interval: 30  # seconds
+state_validation_threshold: 0.8  # 80% consensus required
+max_state_age: 600  # seconds
+
+# Rebalancing Configuration
+rebalancing_enabled: true
+rebalancing_threshold: 0.05  # 5%
+max_rebalancing_amount: "1000000000000000000000000"  # 1M tokens
+min_rebalancing_amount: "1000000000000000000000"  # 1K tokens
+rebalancing_timeout: 1800  # 30 minutes
+
+# Monitoring
+enable_metrics: true
+metrics_port: 9090
+enable_health_check: true
+health_check_interval: 30  # seconds
+
+# Logging
+log_level: "info"
+log_format: "json"
+log_file: "./logs/aggregator.log"
+
+# Database (if using persistent storage)
+database:
+  type: "sqlite"  # or "postgres", "mysql"
+  connection_string: "./data/aggregator.db"
+  max_connections: 10
+  connection_timeout: 30  # seconds
+
+# Security
+enable_tls: false
+tls_cert_file: ""
+tls_key_file: ""
+api_key_required: false
+api_key: ""
+
+# Performance
+max_request_size: 10485760  # 10MB
+request_timeout: 30  # seconds
+response_timeout: 60  # seconds

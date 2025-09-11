@@ -4,7 +4,7 @@ pragma solidity ^0.8.27;
 import {ISyncAVS} from "../../src/hooks/interfaces/ISyncAVS.sol";
 import {Currency} from "@uniswap/v4-core/src/types/Currency.sol";
 
-abstract contract MockSyncAVS is ISyncAVS {
+contract MockSyncAVS is ISyncAVS {
     function getGlobalState(
         Currency currency0,
         Currency currency1
