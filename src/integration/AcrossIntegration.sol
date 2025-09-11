@@ -170,7 +170,7 @@ contract AcrossIntegration is IAcrossIntegration, Ownable, Pausable, ReentrancyG
      * @notice Get rebalancing request details
      * @param requestId Request identifier
      * @return request Rebalancing request details
-     */
+s      */
     function getRebalancingRequest(bytes32 requestId) external view override returns (RebalancingRequest memory request) {
         return rebalancingRequests[requestId];
     }

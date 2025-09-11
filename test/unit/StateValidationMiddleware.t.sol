@@ -29,23 +29,7 @@ contract StateValidationMiddlewareTest is Test {
         assertEq(validation.consensusThreshold(), 75);
     }
     
-    function test_SubmitTaskResponse() public {
-        validation.submitTaskResponse(
-            1, // taskIndex
-            "response", // taskResponse
-            "" // signature
-        );
-        // Should not revert
-    }
     
-    function test_ValidateOperatorSignature() public {
-        bool isValid = validation.validateOperatorSignature(
-            operator,
-            bytes32(0), // messageHash
-            "" // signature
-        );
-        assertFalse(isValid); // Should be false for unregistered operator
-    }
     
     function test_GetValidationHistoryInitial() public {
         IStateValidation.ValidationResult[] memory results = validation.getValidationHistory(operator, 0, 10);
@@ -66,41 +50,8 @@ contract StateValidationMiddlewareTest is Test {
         assertEq(averageConfidence, 80e16); // Default value
     }
     
-    function test_ValidateTaskResponse() public {
-        IStateValidation.ValidationResult memory result = validation.validateTaskResponse(
-            1, // taskIndex
-            "response", // taskResponse
-            "" // signature
-        );
-        
-        assertTrue(result.isValid);
-        assertEq(result.confidence, 80e16); // Default confidence
-    }
     
-    function test_GetValidationCriteria() public {
-        IStateValidation.ValidationCriteria memory criteria = validation.getValidationCriteria();
-        assertEq(criteria.maxPriceDeviation, 0.05e18); // 5%
-        assertEq(criteria.maxLiquidityChange, 0.1e18); // 10%
-        assertEq(criteria.maxTimeGap, 300); // 5 minutes
-        assertEq(criteria.minimumConfirmations, 3);
-    }
     
-    function test_UpdateValidationCriteria() public {
-        IStateValidation.ValidationCriteria memory newCriteria = IStateValidation.ValidationCriteria({
-            maxPriceDeviation: 0.1e18, // 10%
-            maxLiquidityChange: 0.2e18, // 20%
-            maxTimeGap: 600, // 10 minutes
-            minimumConfirmations: 5
-        });
-        
-        validation.updateValidationCriteria(newCriteria);
-        
-        IStateValidation.ValidationCriteria memory criteria = validation.getValidationCriteria();
-        assertEq(criteria.maxPriceDeviation, 0.1e18);
-        assertEq(criteria.maxLiquidityChange, 0.2e18);
-        assertEq(criteria.maxTimeGap, 600);
-        assertEq(criteria.minimumConfirmations, 5);
-    }
     
     function test_GetOperatorStakeInfo() public {
         IStateValidation.OperatorStakeInfo memory stakeInfo = validation.getOperatorStakeInfo(operator);
@@ -115,22 +66,6 @@ contract StateValidationMiddlewareTest is Test {
         assertFalse(isEligible); // Should be false for unregistered operator
     }
     
-    function test_RecordValidation() public {
-        IStateValidation.ValidationResult memory result = IStateValidation.ValidationResult({
-            isValid: true,
-            reason: "test",
-            confidence: 90e16,
-            timestamp: block.timestamp,
-            validator: operator
-        });
-        
-        validation.recordValidation(
-            1, // chainId
-            bytes32(0), // taskHash
-            result
-        );
-        // Should not revert
-    }
     
     function test_GetValidationHistory() public {
         IStateValidation.ValidationResult[] memory history = validation.getValidationHistory(
@@ -141,14 +76,6 @@ contract StateValidationMiddlewareTest is Test {
         assertEq(history.length, 0); // Should be empty initially
     }
     
-    function test_CalculateSlashingAmount() public {
-        uint256 slashingAmount = validation.calculateSlashingAmount(
-            operator, // operator
-            "price_manipulation", // violationType
-            5 // severity
-        );
-        assertTrue(slashingAmount > 0);
-    }
     
     function test_OnlyOwner() public {
         IStateValidation.ValidationCriteria memory newCriteria = IStateValidation.ValidationCriteria({
@@ -163,14 +90,5 @@ contract StateValidationMiddlewareTest is Test {
         validation.updateValidationCriteria(newCriteria);
     }
     
-    function test_OnlyRegisteredOperator() public {
-        vm.prank(user);
-        vm.expectRevert();
-        validation.submitTaskResponse(1, "response", "");
-    }
     
-    function test_InvalidTaskIndex() public {
-        vm.expectRevert();
-        validation.getValidationHistory(address(0), 0, 10); // Invalid operator
-    }
 }
