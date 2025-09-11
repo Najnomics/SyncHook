@@ -205,6 +205,7 @@ contract ChainRegistryTest is Test {
     function test_GetSupportedChainIds() public {
         vm.prank(owner);
         chainRegistry.addChain(1, "Ethereum", address(0x1000), 20000000000, 12);
+        vm.prank(owner);
         chainRegistry.addChain(137, "Polygon", address(0x2000), 30000000000, 2);
         
         uint256[] memory chainIds = chainRegistry.getSupportedChainIds();
@@ -216,6 +217,7 @@ contract ChainRegistryTest is Test {
     function test_GetAllChainConfigs() public {
         vm.prank(owner);
         chainRegistry.addChain(1, "Ethereum", address(0x1000), 20000000000, 12);
+        vm.prank(owner);
         chainRegistry.addChain(137, "Polygon", address(0x2000), 30000000000, 2);
         
         CrossChainUtils.ChainConfig[] memory configs = chainRegistry.getAllChainConfigs();
@@ -231,6 +233,7 @@ contract ChainRegistryTest is Test {
         chainRegistry.addChain(1, "Ethereum", address(0x1000), 20000000000, 12);
         assertEq(chainRegistry.getChainCount(), 1);
         
+        vm.prank(owner);
         chainRegistry.addChain(137, "Polygon", address(0x2000), 30000000000, 2);
         assertEq(chainRegistry.getChainCount(), 2);
     }
@@ -238,6 +241,7 @@ contract ChainRegistryTest is Test {
     function test_GetChainStatistics() public {
         vm.prank(owner);
         chainRegistry.addChain(1, "Ethereum", address(0x1000), 20000000000, 12);
+        vm.prank(owner);
         chainRegistry.addChain(137, "Polygon", address(0x2000), 30000000000, 2);
         
         (
@@ -269,6 +273,7 @@ contract ChainRegistryTest is Test {
     function test_GetOptimalChain() public {
         vm.prank(owner);
         chainRegistry.addChain(1, "Ethereum", address(0x1000), 20000000000, 12);
+        vm.prank(owner);
         chainRegistry.addChain(137, "Polygon", address(0x2000), 10000000000, 2);
         
         // Low cost operation (should choose Polygon with lower gas price)
@@ -303,6 +308,7 @@ contract ChainRegistryTest is Test {
     function test_Unpause() public {
         vm.prank(owner);
         chainRegistry.pause();
+        vm.prank(owner);
         chainRegistry.unpause();
         // Should not revert
     }
@@ -310,7 +316,6 @@ contract ChainRegistryTest is Test {
     function test_OnlyOwner() public {
         vm.prank(user);
         vm.expectRevert();
-        vm.prank(owner);
         chainRegistry.addChain(1, "Ethereum", address(0x1000), 20000000000, 12);
     }
     

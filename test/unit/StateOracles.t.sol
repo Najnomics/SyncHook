@@ -3,18 +3,24 @@ pragma solidity ^0.8.27;
 
 import {Test, console2} from "forge-std/Test.sol";
 import {StateOracles} from "../../src/integration/StateOracles.sol";
+import {MockOracle} from "../helpers/MockOracle.sol";
 
 contract StateOraclesTest is Test {
     StateOracles public stateOracles;
+    MockOracle public mockOracle;
     
     address public owner = address(0x1);
     address public user = address(0x2);
     address public token = address(0x1000);
-    address public oracle = address(0x2000);
+    address public oracle;
     
     function setUp() public {
         vm.prank(owner);
         stateOracles = new StateOracles();
+        
+        // Deploy mock oracle
+        mockOracle = new MockOracle();
+        oracle = address(mockOracle);
     }
     
     function test_Deployment() public {
@@ -152,6 +158,7 @@ contract StateOraclesTest is Test {
         assertFalse(oracles[0].isActive);
         
         // Toggle back to active
+        vm.prank(owner);
         stateOracles.toggleOracleActive(token, 0);
         oracles = stateOracles.getTokenOracles(token);
         assertTrue(oracles[0].isActive);
@@ -168,6 +175,7 @@ contract StateOraclesTest is Test {
         stateOracles.authorizeOracle(oracle);
         assertTrue(stateOracles.authorizedOracles(oracle));
         
+        vm.prank(owner);
         stateOracles.deauthorizeOracle(oracle);
         assertFalse(stateOracles.authorizedOracles(oracle));
     }
@@ -178,6 +186,7 @@ contract StateOraclesTest is Test {
         vm.prank(owner);
         stateOracles.addOracle(token, oracle, 1e18, 8);
         
+        vm.prank(owner);
         stateOracles.updatePrice(token);
         // Should not revert
     }
@@ -188,6 +197,7 @@ contract StateOraclesTest is Test {
         vm.prank(owner);
         stateOracles.addOracle(token, oracle, 1e18, 8);
         
+        vm.prank(owner);
         stateOracles.updateLiquidity(
             token,
             1000000e18, // totalLiquidity
@@ -204,6 +214,7 @@ contract StateOraclesTest is Test {
         stateOracles.addOracle(token, oracle, 1e18, 8);
         
         // Update price first
+        vm.prank(owner);
         stateOracles.updatePrice(token);
         
         (uint256 price, uint256 confidence, uint256 timestamp) = stateOracles.getPrice(token);
@@ -219,6 +230,7 @@ contract StateOraclesTest is Test {
         stateOracles.addOracle(token, oracle, 1e18, 8);
         
         // Update liquidity first
+        vm.prank(owner);
         stateOracles.updateLiquidity(
             token,
             1000000e18,
@@ -272,6 +284,7 @@ contract StateOraclesTest is Test {
     function test_Unpause() public {
         vm.prank(owner);
         stateOracles.pause();
+        vm.prank(owner);
         stateOracles.unpause();
         // Should not revert
     }
@@ -279,7 +292,6 @@ contract StateOraclesTest is Test {
     function test_OnlyOwner() public {
         vm.prank(user);
         vm.expectRevert();
-        vm.prank(owner);
         stateOracles.authorizeOracle(oracle);
     }
     

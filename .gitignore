@@ -2,3 +2,8 @@
 context/
 
 lib/
+
+.claude/
+cache/
+
+out/

@@ -306,6 +306,29 @@ contract AcrossIntegration is IAcrossIntegration, Ownable, Pausable, ReentrancyG
     }
 
     /**
+     * @notice Add a supported token for rebalancing
+     * @param token The token address to add
+     */
+    function addSupportedToken(address token) external onlyOwner {
+        require(token != address(0), "Invalid token address");
+        require(!supportedTokens[token], "Token already supported");
+        
+        supportedTokens[token] = true;
+        emit TokenAdded(token);
+    }
+
+    /**
+     * @notice Remove a supported token for rebalancing
+     * @param token The token address to remove
+     */
+    function removeSupportedToken(address token) external onlyOwner {
+        require(supportedTokens[token], "Token not supported");
+        
+        supportedTokens[token] = false;
+        emit TokenRemoved(token);
+    }
+
+    /**
      * @notice Pause rebalancing
      */
     function pauseRebalancing() external onlyOwner {
@@ -424,5 +447,7 @@ contract AcrossIntegration is IAcrossIntegration, Ownable, Pausable, ReentrancyG
     event ConfigUpdated(uint256 bridgeFeeBps, uint256 maxRebalancingAmount, uint256 minRebalancingAmount, uint256 rebalancingCooldown);
     event RebalancingPaused();
     event RebalancingResumed();
+    event TokenAdded(address indexed token);
+    event TokenRemoved(address indexed token);
     event AcrossDepositInitiated(uint256 sourceChain, uint256 targetChain, address token, uint256 amount);
 }
