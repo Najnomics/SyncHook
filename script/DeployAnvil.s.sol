@@ -2,6 +2,7 @@
 pragma solidity ^0.8.27;
 
 import {Script, console2} from "forge-std/Script.sol";
+import {DeployScript} from "./Deploy.s.sol";
 import {SyncHook} from "../src/hooks/SyncHook.sol";
 import {SyncAVS} from "../src/avs/SyncAVS.sol";
 import {SyncTaskManager} from "../src/avs/SyncTaskManager.sol";
@@ -21,34 +22,19 @@ import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 import {ISyncAVS} from "../src/hooks/interfaces/ISyncAVS.sol";
 import {IAcrossIntegration} from "../src/hooks/interfaces/IAcrossIntegration.sol";
 
-contract DeployScript is Script {
-    // Core contracts
-    SyncHook public syncHook;
-    SyncAVS public syncAVS;
-    SyncTaskManager public syncTaskManager;
-    StateValidationMiddleware public stateValidation;
-    AcrossIntegration public acrossIntegration;
-    StateOracles public stateOracles;
-    ChainRegistry public chainRegistry;
-
-    // Configuration
-    address public constant USDC = 0xA0B86A33e6441b8C4c8C0e1234567890AbcdEF12; // Example address
-    address public constant WETH = 0x1234567890123456789012345678901234567890; // Example address
-    address public constant ACROSS_SPOKE_POOL = 0x1234567890123456789012345678901234567890; // Example address
-    address public constant ACROSS_RELAYER = 0x1234567890123456789012345678901234567890; // Example address
-
-    function run() external virtual {
-        _deploy();
-    }
-
-    function _deploy() internal {
-        uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
-        address deployer = vm.addr(deployerPrivateKey);
+contract DeployAnvilScript is DeployScript {
+    function run() external override {
+        console2.log("Deploying to Anvil local network...");
+        console2.log("Using Anvil default account: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+        
+        // Override private key for Anvil
+        uint256 anvilPrivateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80;
+        address deployer = vm.addr(anvilPrivateKey);
         
         console2.log("Deploying contracts with account:", deployer);
         console2.log("Account balance:", deployer.balance);
 
-        vm.startBroadcast(deployerPrivateKey);
+        vm.startBroadcast(anvilPrivateKey);
 
         // Deploy StateOracles
         console2.log("Deploying StateOracles...");
@@ -83,17 +69,6 @@ contract DeployScript is Script {
             IAcrossIntegration(address(0)) // acrossIntegration - will be updated later
         );
         console2.log("SyncAVS deployed at:", address(syncAVS));
-
-        // Update StateValidationMiddleware with SyncAVS address
-        console2.log("Updating StateValidationMiddleware with SyncAVS address...");
-        stateValidation = new StateValidationMiddleware(
-            address(syncAVS),
-            address(0), // slashingRegistry
-            0.01e18, // validationReward: 0.01 ETH
-            0.1e18, // slashingPenalty: 0.1 ETH
-            75 // consensusThreshold: 75%
-        );
-        console2.log("StateValidationMiddleware updated at:", address(stateValidation));
 
         // Deploy SyncTaskManager
         console2.log("Deploying SyncTaskManager...");
@@ -136,39 +111,8 @@ contract DeployScript is Script {
 
         // Log deployment summary
         _logDeploymentSummary();
-    }
-
-    function _configureInitialSettings() internal {
-        // Configure ChainRegistry with initial chains
-        chainRegistry.addChain(1, "Ethereum", 0x1234567890123456789012345678901234567890, 20000000000, 12); // Ethereum
-        chainRegistry.addChain(137, "Polygon", 0x1234567890123456789012345678901234567890, 30000000000, 2); // Polygon
-        chainRegistry.addChain(42161, "Arbitrum", 0x1234567890123456789012345678901234567890, 1000000000, 1); // Arbitrum
-
-        // Configure StateOracles with initial price feeds
-        stateOracles.authorizeOracle(0x1234567890123456789012345678901234567890);
-        stateOracles.addOracle(USDC, 0x1234567890123456789012345678901234567890, 1e18, 8); // USDC price feed
-        stateOracles.addOracle(WETH, 0x1234567890123456789012345678901234567890, 1e18, 8); // WETH price feed
-
-        // Set initial validation criteria
-        stateValidation.updateValidationCriteria(
-            IStateValidation.ValidationCriteria({
-                maxPriceDeviation: 0.05e18, // 5%
-                maxLiquidityChange: 0.1e18, // 10%
-                maxTimeGap: 300, // 5 minutes
-                minimumConfirmations: 3
-            })
-        );
-    }
-
-    function _logDeploymentSummary() internal view {
-        console2.log("\n=== DEPLOYMENT SUMMARY ===");
-        console2.log("SyncHook:", address(syncHook));
-        console2.log("SyncAVS:", address(syncAVS));
-        console2.log("SyncTaskManager:", address(syncTaskManager));
-        console2.log("StateValidationMiddleware:", address(stateValidation));
-        console2.log("AcrossIntegration:", address(acrossIntegration));
-        console2.log("StateOracles:", address(stateOracles));
-        console2.log("ChainRegistry:", address(chainRegistry));
-        console2.log("========================\n");
+        
+        console2.log("Anvil deployment completed!");
+        console2.log("You can now interact with contracts using the addresses above.");
     }
 }

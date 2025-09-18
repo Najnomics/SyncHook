@@ -1,16 +1,21 @@
-# SyncHook (AVS-Enabled)
+# SyncHook - Cross-Chain Liquidity Synchronization
 
-[![Solidity](https://img.shields.io/badge/Solidity-0.8.24-blue.svg)](https://soliditylang.org/)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.27-blue.svg)](https://soliditylang.org/)
 [![EigenLayer](https://img.shields.io/badge/EigenLayer-AVS-purple.svg)](https://eigenlayer.xyz/)
 [![Across Protocol](https://img.shields.io/badge/Across-Protocol-green.svg)](https://across.to/)
 [![Uniswap V4](https://img.shields.io/badge/Uniswap-V4-pink.svg)](https://uniswap.org/)
 [![Foundry](https://img.shields.io/badge/Built%20with-Foundry-red.svg)](https://getfoundry.sh/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Coverage](https://img.shields.io/badge/Coverage-95%25-brightgreen.svg)]()
+[![Coverage](https://img.shields.io/badge/Coverage-56%25-orange.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-252%20Passing-brightgreen.svg)]()
 
-## 🌐 Hook Description
+## 🤝 Partner Integration
 
-**SyncHook** maintains synchronized pool states across chains using an Actively Validated Service (AVS) and Across Protocol for liquidity movement. The hook retrieves global pool state from the AVS in `beforeSwap`, adjusts swap parameters for consistency, updates the AVS with new state information in `afterSwap`, and uses Across to redistribute assets when liquidity imbalances are detected.
+**EigenLayer AVS Integration**: This project leverages EigenLayer's Actively Validated Services (AVS) framework for secure cross-chain state synchronization. Built using the [Hourglass AVS Template](https://github.com/Layr-Labs/hourglass-avs-template) and [EigenLayer DevKit](https://github.com/Layr-Labs/devkit-cli) for robust operator management and economic security.
+
+## 🌐 Project Description
+
+**SyncHook** is a revolutionary Uniswap V4 hook that maintains synchronized pool states across multiple chains using EigenLayer's AVS infrastructure and Across Protocol for automated liquidity rebalancing. The system ensures optimal capital efficiency and price consistency across all supported chains through real-time state coordination and intelligent parameter optimization.
 
 ### Core Features
 - **Global State Synchronization**: Real-time pool state coordination across multiple chains
@@ -24,21 +29,28 @@
 ## 🎯 Problem Statement
 
 ### The Multi-Chain Liquidity Crisis
-- **$47B+ Fragmented Liquidity**: Assets scattered across 50+ chains with no coordination
-- **Price Discrepancies**: 2-8% price differences for identical assets across chains
-- **Inefficient Capital**: LPs providing redundant liquidity without global optimization
+The current DeFi ecosystem suffers from severe liquidity fragmentation across 50+ blockchain networks, creating significant inefficiencies:
+
+- **$47B+ Fragmented Liquidity**: Assets scattered across chains with no coordination mechanism
+- **Price Discrepancies**: 2-8% price differences for identical assets across different chains
+- **Inefficient Capital Allocation**: LPs providing redundant liquidity without global optimization
 - **Poor User Experience**: Users forced to bridge assets or accept suboptimal pricing
-- **Arbitrage MEV**: $2.1B+ annual value extracted from cross-chain price inefficiencies
+- **Arbitrage MEV Extraction**: $2.1B+ annual value extracted from cross-chain price inefficiencies
+- **Capital Inefficiency**: Over $15B in redundant liquidity across similar trading pairs
 
 ### Technical Challenges
 1. **State Synchronization**: No reliable mechanism for real-time cross-chain state sharing
 2. **Liquidity Imbalances**: Pools becoming over/under-capitalized without global awareness
 3. **Parameter Optimization**: Isolated pool parameters leading to suboptimal performance
 4. **Latency Issues**: Cross-chain operations taking 10+ minutes affecting real-time trading
+5. **Security Concerns**: Centralized bridges and oracles creating single points of failure
+6. **Economic Inefficiency**: Lack of coordinated rebalancing leading to capital waste
 
 ---
 
 ## 💡 Solution Architecture
+
+SyncHook addresses the multi-chain liquidity crisis through a sophisticated three-layer architecture that leverages EigenLayer's AVS framework for secure, decentralized state synchronization and Across Protocol for efficient cross-chain liquidity movement.
 
 ### 🏗️ Three-Layer System Design
 
@@ -49,21 +61,35 @@ graph TB
         B[Arbitrum Pool] --> D
         C[Polygon Pool] --> D
         E[Base Pool] --> D
+        F[Optimism Pool] --> D
     end
     
     subgraph "AVS Coordination Layer" 
-        D --> F[State Aggregation]
-        F --> G[Predictive Analytics]
-        G --> H[Rebalancing Logic]
-        H --> I[Alert System]
+        D --> G[State Aggregation]
+        G --> H[Predictive Analytics]
+        H --> I[Rebalancing Logic]
+        I --> J[Alert System]
+        J --> K[Operator Management]
     end
     
     subgraph "Execution Layer"
-        I --> J[Across Protocol]
-        J --> K[Liquidity Redistribution]
-        K --> L[State Updates]
+        K --> L[Across Protocol]
+        L --> M[Liquidity Redistribution]
+        M --> N[State Updates]
+        N --> O[Performance Monitoring]
     end
 ```
+
+### 🔄 How SyncHook Works
+
+The system operates through a continuous cycle of state monitoring, analysis, and optimization:
+
+1. **State Collection**: Operators continuously monitor pool states across all supported chains
+2. **AVS Aggregation**: EigenLayer AVS securely aggregates and validates state data
+3. **Analytics Processing**: AI-driven predictive analytics identify optimization opportunities
+4. **Parameter Adjustment**: Hook dynamically adjusts swap parameters based on global state
+5. **Automated Rebalancing**: Across Protocol executes liquidity movements when imbalances are detected
+6. **Performance Monitoring**: Real-time tracking ensures optimal system performance
 
 ### 🔄 Hook Execution Flow
 
@@ -123,6 +149,27 @@ sequenceDiagram
 - Calculates optimal liquidity distribution scenarios
 - Executes automated rebalancing when thresholds are met
 - Tracks rebalancing performance and cost optimization
+
+## 🛠️ Templates and Frameworks Used
+
+This project is built using industry-standard templates and frameworks:
+
+- **EigenLayer Hourglass AVS Template**: Provides the foundational AVS infrastructure for operator management, task coordination, and economic security
+- **EigenLayer DevKit CLI**: Used for AVS deployment, operator registration, and configuration management
+- **Uniswap V4 Hook Template**: Custom implementation following Uniswap V4 hook standards for seamless integration
+- **Foundry Framework**: Comprehensive testing, deployment, and development tooling for Solidity contracts
+
+## 📊 Test Coverage and Quality Assurance
+
+This project maintains the highest standards of code quality and reliability:
+
+- **252+ Comprehensive Tests**: Extensive test suite covering unit, integration, fuzz, and invariant testing
+- **56% Forge Coverage**: Detailed code coverage analysis ensuring robust implementation
+- **Advanced Testing Strategies**:
+  - **Fuzz Testing**: Property-based testing for edge case discovery
+  - **Invariant Testing**: System-wide property validation
+  - **Integration Testing**: End-to-end cross-chain flow validation
+  - **Unit Testing**: Individual component functionality verification
 
 ---
 
@@ -564,7 +611,7 @@ contract AcrossIntegration {
 
 ---
 
-## 🛠️ Development Workflow
+## 🚀 Installation and Setup
 
 ### Prerequisites
 ```bash
@@ -579,30 +626,99 @@ go version # Requires Go 1.21+
 node --version # Requires Node 18+
 ```
 
-### Dependencies Installation
+### Quick Start
 ```bash
 # Clone repository
 git clone https://github.com/your-org/synchook
 cd synchook
 
-# Install Foundry dependencies
+# Install all dependencies
 make install-deps
 
-# Install Go dependencies
-cd operator && go mod tidy
+# Build contracts
+make build
 
-# Install frontend dependencies
-cd frontend && npm install
+# Run tests
+make test
+
+# Generate coverage report
+forge coverage --ir-minimum
 ```
 
-### Foundry Dependencies
+### Manual Installation
 ```bash
+# Install Foundry dependencies
 forge install foundry-rs/forge-std --no-commit
 forge install OpenZeppelin/openzeppelin-contracts --no-commit  
 forge install Layr-Labs/eigenlayer-contracts --no-commit
 forge install Uniswap/v4-core --no-commit
 forge install Uniswap/v4-periphery --no-commit
 forge install across-protocol/contracts --no-commit
+
+# Install Go dependencies (for AVS operator)
+cd operator && go mod tidy
+
+# Install frontend dependencies (if applicable)
+cd frontend && npm install
+```
+
+### Key Commands
+
+#### Testing and Coverage
+```bash
+# Run all tests
+make test
+
+# Run specific test suites
+make test-unit          # Unit tests only
+make test-integration   # Integration tests only
+make test-fuzz         # Fuzz tests only
+make test-invariant    # Invariant tests only
+
+# Generate coverage report
+forge coverage --ir-minimum
+
+# Generate gas report
+make gas-report
+```
+
+#### Building and Deployment
+```bash
+# Build contracts
+make build
+
+# Deploy to local network
+make deploy-local
+
+# Deploy to testnet
+make deploy-testnet
+
+# Deploy to mainnet
+make deploy-mainnet
+
+# Setup AVS
+make setup-avs
+
+# Register operator
+make register-operator
+```
+
+#### Development Workflow
+```bash
+# Complete development setup
+make setup
+
+# Development cycle
+make dev
+
+# CI/CD pipeline
+make ci
+
+# Code formatting
+make format
+
+# Linting
+make lint
 ```
 
 ### Subgraph Development

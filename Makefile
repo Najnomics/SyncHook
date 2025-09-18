@@ -59,14 +59,25 @@ gas-report:
 # DEPLOYMENT COMMANDS
 # ============================================================================
 
-deploy-local:
-	forge script script/Deploy.s.sol --rpc-url http://localhost:8545 --broadcast
+deploy-anvil:
+	forge script script/DeployAnvil.s.sol --rpc-url http://localhost:8545 --broadcast
 
 deploy-testnet:
-	forge script script/Deploy.s.sol --rpc-url $(TESTNET_RPC) --broadcast --verify
+	forge script script/DeployTestnet.s.sol --rpc-url $(TESTNET_RPC) --broadcast --verify
 
 deploy-mainnet:
-	forge script script/Deploy.s.sol --rpc-url $(MAINNET_RPC) --broadcast --verify
+	forge script script/DeployMainnet.s.sol --rpc-url $(MAINNET_RPC) --broadcast --verify
+
+deploy-local: deploy-anvil
+
+deploy-all:
+	NETWORK=anvil forge script script/DeployAll.s.sol --rpc-url http://localhost:8545 --broadcast
+
+deploy-all-testnet:
+	NETWORK=testnet forge script script/DeployAll.s.sol --rpc-url $(TESTNET_RPC) --broadcast --verify
+
+deploy-all-mainnet:
+	NETWORK=mainnet forge script script/DeployAll.s.sol --rpc-url $(MAINNET_RPC) --broadcast --verify
 
 setup-avs:
 	forge script script/SetupAVS.s.sol --rpc-url $(RPC_URL) --broadcast
@@ -76,6 +87,25 @@ register-operator:
 
 configure-chains:
 	forge script script/ConfigureChains.s.sol --rpc-url $(RPC_URL) --broadcast
+
+# ============================================================================
+# ENVIRONMENT-SPECIFIC DEPLOYMENT
+# ============================================================================
+
+deploy-sepolia:
+	TESTNET_RPC_URL=$(SEPOLIA_RPC_URL) TESTNET_PRIVATE_KEY=$(SEPOLIA_PRIVATE_KEY) make deploy-testnet
+
+deploy-arbitrum-sepolia:
+	TESTNET_RPC_URL=$(ARBITRUM_SEPOLIA_RPC_URL) TESTNET_PRIVATE_KEY=$(ARBITRUM_SEPOLIA_PRIVATE_KEY) make deploy-testnet
+
+deploy-polygon-mumbai:
+	TESTNET_RPC_URL=$(POLYGON_MUMBAI_RPC_URL) TESTNET_PRIVATE_KEY=$(POLYGON_MUMBAI_PRIVATE_KEY) make deploy-testnet
+
+deploy-base-sepolia:
+	TESTNET_RPC_URL=$(BASE_SEPOLIA_RPC_URL) TESTNET_PRIVATE_KEY=$(BASE_SEPOLIA_PRIVATE_KEY) make deploy-testnet
+
+deploy-optimism-sepolia:
+	TESTNET_RPC_URL=$(OPTIMISM_SEPOLIA_RPC_URL) TESTNET_PRIVATE_KEY=$(OPTIMISM_SEPOLIA_PRIVATE_KEY) make deploy-testnet
 
 # ============================================================================
 # OPTIMIZATION COMMANDS
