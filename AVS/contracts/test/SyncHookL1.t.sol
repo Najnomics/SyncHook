@@ -95,3 +95,4 @@ contract SyncHookL1Test is Test {
         assertFalse(syncHookL1.authorizedOperators(operator));
     }
 }
+

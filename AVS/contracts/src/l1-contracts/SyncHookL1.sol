@@ -146,3 +146,4 @@ contract SyncHookL1 {
         poolStates[poolId].isActive = false;
     }
 }
+

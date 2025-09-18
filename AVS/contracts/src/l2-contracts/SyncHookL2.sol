@@ -174,3 +174,4 @@ contract SyncHookL2 {
         chainPoolStates[poolId][chainId].isActive = false;
     }
 }
+

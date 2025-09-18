@@ -135,3 +135,4 @@ contract SyncHookL2Test is Test {
         assertFalse(isActive);
     }
 }
+
