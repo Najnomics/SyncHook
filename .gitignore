@@ -1,7 +1,6 @@
 # Ignore context folder
 context/
 
-lib/
 
 .claude/
 cache/
