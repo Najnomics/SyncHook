@@ -7,7 +7,7 @@ import (
 
 	"github.com/Layr-Labs/eigensdk-go/logging"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/synchook/operator/pkg/utils"
+	"github.com/synchook/synchook-avs/pkg/utils"
 )
 
 // ArbitrumClient represents an Arbitrum blockchain client

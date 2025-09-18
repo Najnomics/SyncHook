@@ -1,0 +1,154 @@
+name: Security Audit
+
+on:
+  schedule:
+    - cron: '0 0 * * 1' # Weekly on Monday
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: |
+          forge install --no-commit
+
+      - name: Run Slither
+        run: |
+          pip install slither-analyzer
+          slither . --exclude-dependencies --json slither-report.json
+
+      - name: Run Mythril
+        run: |
+          pip install mythril
+          myth analyze src/ --execution-timeout 300
+
+      - name: Run Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten
+          generateSarif: "1"
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: semgrep.sarif
+
+  dependency-check:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Check dependencies
+        run: |
+          # Check for known vulnerable dependencies
+          forge install --no-commit
+          
+          # Check for outdated dependencies
+          echo "Checking for outdated dependencies..."
+          find lib/ -name "package.json" -exec npm outdated {} \; || true
+
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: |
+          forge install --no-commit
+
+      - name: Check code quality
+        run: |
+          # Check for common security patterns
+          echo "Checking for security anti-patterns..."
+          
+          # Check for reentrancy vulnerabilities
+          if grep -r "call\(" src/ --include="*.sol"; then
+            echo "Found .call() usage - review for reentrancy"
+          fi
+          
+          # Check for integer overflow/underflow
+          if grep -r "unchecked" src/ --include="*.sol"; then
+            echo "Found unchecked blocks - review for overflow/underflow"
+          fi
+          
+          # Check for delegatecall usage
+          if grep -r "delegatecall" src/ --include="*.sol"; then
+            echo "Found delegatecall usage - review for security"
+          fi
+          
+          # Check for assembly usage
+          if grep -r "assembly" src/ --include="*.sol"; then
+            echo "Found assembly usage - review for security"
+          fi
+
+  generate-report:
+    name: Generate Security Report
+    runs-on: ubuntu-latest
+    needs: [security-scan, dependency-check, code-quality]
+    if: always()
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate security report
+        run: |
+          echo "# Security Audit Report" > security-report.md
+          echo "Generated on: $(date)" >> security-report.md
+          echo "" >> security-report.md
+          echo "## Summary" >> security-report.md
+          echo "- Security Scan: ${{ needs.security-scan.result }}" >> security-report.md
+          echo "- Dependency Check: ${{ needs.dependency-check.result }}" >> security-report.md
+          echo "- Code Quality: ${{ needs.code-quality.result }}" >> security-report.md
+          echo "" >> security-report.md
+          echo "## Recommendations" >> security-report.md
+          echo "1. Review all findings from security tools" >> security-report.md
+          echo "2. Update dependencies regularly" >> security-report.md
+          echo "3. Consider professional security audit before mainnet deployment" >> security-report.md
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-report
+          path: security-report.md

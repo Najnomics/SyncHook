@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/synchook/avs/internal/across"
-	"github.com/synchook/avs/internal/blockchain"
-	"github.com/synchook/avs/internal/config"
-	"github.com/synchook/avs/internal/database"
-	"github.com/synchook/avs/internal/eigenlayer"
+	"github.com/synchook/synchook-avs/internal/across"
+	"github.com/synchook/synchook-avs/internal/blockchain"
+	"github.com/synchook/synchook-avs/internal/config"
+	"github.com/synchook/synchook-avs/internal/database"
+	"github.com/synchook/synchook-avs/internal/eigenlayer"
 	"github.com/sirupsen/logrus"
 )
 

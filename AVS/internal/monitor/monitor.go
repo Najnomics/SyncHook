@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/synchook/avs/internal/blockchain"
-	"github.com/synchook/avs/internal/config"
-	"github.com/synchook/avs/internal/database"
+	"github.com/synchook/synchook-avs/internal/blockchain"
+	"github.com/synchook/synchook-avs/internal/config"
+	"github.com/synchook/synchook-avs/internal/database"
 	"github.com/sirupsen/logrus"
 )
 

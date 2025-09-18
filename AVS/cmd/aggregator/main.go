@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	"github.com/Layr-Labs/eigensdk-go/logging"
-	"github.com/synchook/operator/aggregator"
+	"github.com/synchook/synchook-avs/aggregator"
 )
 
 var (
@@ -41,7 +41,7 @@ func main() {
 	}
 
 	// Create aggregator
-	agg, err := aggregator.NewAggregator(config, logger)
+	agg, err := aggregator.NewSyncHookAggregator(config, logger)
 	if err != nil {
 		logger.Fatal("Failed to create aggregator", "error", err)
 	}

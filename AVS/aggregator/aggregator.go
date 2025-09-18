@@ -13,7 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-type Aggregator struct {
+type SyncHookAggregator struct {
 	config    Config
 	logger    logging.Logger
 	
@@ -29,7 +29,7 @@ type Aggregator struct {
 	poolStatesMutex   sync.RWMutex
 	
 	// Task management
-	tasks             map[uint32]*Task
+	tasks             map[uint32]*SyncHookTask
 	tasksMutex        sync.RWMutex
 	
 	// Control
@@ -68,7 +68,7 @@ type Config struct {
 	LogFormat                   string  `json:"log_format"`
 }
 
-type Task struct {
+type SyncHookTask struct {
 	TaskID           uint32         `json:"taskId"`
 	TaskType         uint32         `json:"taskType"`
 	ChainID          uint32         `json:"chainId"`
@@ -79,12 +79,12 @@ type Task struct {
 	CreatedAt        uint64         `json:"createdAt"`
 	QuorumNumbers    []uint8        `json:"quorumNumbers"`
 	QuorumThresholdPercentage uint32 `json:"quorumThresholdPercentage"`
-	Responses        map[string]*TaskResponse `json:"responses"`
+	Responses        map[string]*SyncHookTaskResponse `json:"responses"`
 	ConsensusReached bool           `json:"consensusReached"`
 	Result           []byte         `json:"result"`
 }
 
-type TaskResponse struct {
+type SyncHookTaskResponse struct {
 	OperatorAddress common.Address `json:"operatorAddress"`
 	Response        []byte         `json:"response"`
 	Signature       []byte         `json:"signature"`
@@ -114,7 +114,7 @@ type PoolState struct {
 	LastUpdated    time.Time `json:"lastUpdated"`
 }
 
-func NewAggregator(config Config, logger logging.Logger) (*Aggregator, error) {
+func NewSyncHookAggregator(config Config, logger logging.Logger) (*SyncHookAggregator, error) {
 	// Initialize Prometheus metrics
 	tasksTotal := promauto.NewCounter(prometheus.CounterOpts{
 		Name: "synchook_aggregator_tasks_total",
@@ -141,7 +141,7 @@ func NewAggregator(config Config, logger logging.Logger) (*Aggregator, error) {
 		Help: "Total number of rebalancing operations",
 	})
 
-	return &Aggregator{
+	return &SyncHookAggregator{
 		config:         config,
 		logger:         logger,
 		tasksTotal:     tasksTotal,
@@ -150,11 +150,11 @@ func NewAggregator(config Config, logger logging.Logger) (*Aggregator, error) {
 		stateUpdates:   stateUpdates,
 		rebalancingOps: rebalancingOps,
 		poolStates:     make(map[string]*GlobalPoolState),
-		tasks:          make(map[uint32]*Task),
+		tasks:          make(map[uint32]*SyncHookTask),
 	}, nil
 }
 
-func (a *Aggregator) Start(ctx context.Context) error {
+func (a *SyncHookAggregator) Start(ctx context.Context) error {
 	a.ctx, a.cancel = context.WithCancel(ctx)
 
 	a.logger.Info("Starting SyncHook aggregator")
@@ -182,13 +182,13 @@ func (a *Aggregator) Start(ctx context.Context) error {
 	return nil
 }
 
-func (a *Aggregator) Stop() {
+func (a *SyncHookAggregator) Stop() {
 	if a.cancel != nil {
 		a.cancel()
 	}
 }
 
-func (a *Aggregator) taskProcessingLoop() {
+func (a *SyncHookAggregator) taskProcessingLoop() {
 	ticker := time.NewTicker(time.Duration(a.config.TaskTimeout) * time.Second)
 	defer ticker.Stop()
 
@@ -202,7 +202,7 @@ func (a *Aggregator) taskProcessingLoop() {
 	}
 }
 
-func (a *Aggregator) stateAggregationLoop() {
+func (a *SyncHookAggregator) stateAggregationLoop() {
 	ticker := time.NewTicker(time.Duration(a.config.StateUpdateInterval) * time.Second)
 	defer ticker.Stop()
 
@@ -216,7 +216,7 @@ func (a *Aggregator) stateAggregationLoop() {
 	}
 }
 
-func (a *Aggregator) rebalancingLoop() {
+func (a *SyncHookAggregator) rebalancingLoop() {
 	ticker := time.NewTicker(60 * time.Second) // Check every minute
 	defer ticker.Stop()
 
@@ -230,7 +230,7 @@ func (a *Aggregator) rebalancingLoop() {
 	}
 }
 
-func (a *Aggregator) healthCheckLoop() {
+func (a *SyncHookAggregator) healthCheckLoop() {
 	ticker := time.NewTicker(time.Duration(a.config.HealthCheckInterval) * time.Second)
 	defer ticker.Stop()
 
@@ -244,7 +244,7 @@ func (a *Aggregator) healthCheckLoop() {
 	}
 }
 
-func (a *Aggregator) processTasks() {
+func (a *SyncHookAggregator) processTasks() {
 	a.tasksMutex.Lock()
 	defer a.tasksMutex.Unlock()
 
@@ -266,7 +266,7 @@ func (a *Aggregator) processTasks() {
 	}
 }
 
-func (a *Aggregator) processConsensus(task *Task) {
+func (a *SyncHookAggregator) processConsensus(task *SyncHookTask) {
 	if task.ConsensusReached {
 		return
 	}
@@ -293,7 +293,7 @@ func (a *Aggregator) processConsensus(task *Task) {
 	}
 }
 
-func (a *Aggregator) aggregateStates() {
+func (a *SyncHookAggregator) aggregateStates() {
 	a.poolStatesMutex.Lock()
 	defer a.poolStatesMutex.Unlock()
 
@@ -323,7 +323,7 @@ func (a *Aggregator) aggregateStates() {
 	}
 }
 
-func (a *Aggregator) aggregateChainStates(globalState *GlobalPoolState) error {
+func (a *SyncHookAggregator) aggregateChainStates(globalState *GlobalPoolState) error {
 	chainStates := globalState.ChainStates
 	if len(chainStates) == 0 {
 		return fmt.Errorf("no chain states available")
@@ -359,7 +359,7 @@ func (a *Aggregator) aggregateChainStates(globalState *GlobalPoolState) error {
 	return nil
 }
 
-func (a *Aggregator) calculateWeightedAveragePrice(chainStates map[uint32]*PoolState, globalState *GlobalPoolState) error {
+func (a *SyncHookAggregator) calculateWeightedAveragePrice(chainStates map[uint32]*PoolState, globalState *GlobalPoolState) error {
 	if len(chainStates) == 0 {
 		return fmt.Errorf("no chain states available")
 	}
@@ -383,7 +383,7 @@ func (a *Aggregator) calculateWeightedAveragePrice(chainStates map[uint32]*PoolS
 	return nil
 }
 
-func (a *Aggregator) calculateImbalanceScore(chainStates map[uint32]*PoolState, globalState *GlobalPoolState) error {
+func (a *SyncHookAggregator) calculateImbalanceScore(chainStates map[uint32]*PoolState, globalState *GlobalPoolState) error {
 	if len(chainStates) < 2 {
 		globalState.ImbalanceScore = big.NewInt(0)
 		return nil
@@ -409,7 +409,7 @@ func (a *Aggregator) calculateImbalanceScore(chainStates map[uint32]*PoolState, 
 	return nil
 }
 
-func (a *Aggregator) checkRebalancingNeeds() {
+func (a *SyncHookAggregator) checkRebalancingNeeds() {
 	a.poolStatesMutex.RLock()
 	defer a.poolStatesMutex.RUnlock()
 
@@ -432,7 +432,7 @@ func (a *Aggregator) checkRebalancingNeeds() {
 	}
 }
 
-func (a *Aggregator) calculateImbalance(globalState *GlobalPoolState) *big.Int {
+func (a *SyncHookAggregator) calculateImbalance(globalState *GlobalPoolState) *big.Int {
 	chainStates := globalState.ChainStates
 	if len(chainStates) < 2 {
 		return big.NewInt(0)
@@ -452,7 +452,7 @@ func (a *Aggregator) calculateImbalance(globalState *GlobalPoolState) *big.Int {
 	return totalDeviation
 }
 
-func (a *Aggregator) calculateImbalancePercent(imbalance, totalLiquidity *big.Int) float64 {
+func (a *SyncHookAggregator) calculateImbalancePercent(imbalance, totalLiquidity *big.Int) float64 {
 	if totalLiquidity.Cmp(big.NewInt(0)) == 0 {
 		return 0.0
 	}
@@ -463,14 +463,14 @@ func (a *Aggregator) calculateImbalancePercent(imbalance, totalLiquidity *big.In
 	return float64(percent.Int64())
 }
 
-func (a *Aggregator) performHealthCheck() {
+func (a *SyncHookAggregator) performHealthCheck() {
 	// TODO: Implement health check logic
 	// This would check various components and report status
 	a.logger.Debug("Performing health check")
 }
 
 // Helper function for square root
-func (a *Aggregator) sqrt(n *big.Int) *big.Int {
+func (a *SyncHookAggregator) sqrt(n *big.Int) *big.Int {
 	if n.Cmp(big.NewInt(0)) <= 0 {
 		return big.NewInt(0)
 	}

@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/synchook/avs/internal/config"
-	"github.com/synchook/avs/internal/operator"
-	"github.com/synchook/avs/internal/logger"
+	"github.com/synchook/synchook-avs/internal/config"
+	"github.com/synchook/synchook-avs/internal/operator"
+	"github.com/synchook/synchook-avs/internal/logger"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

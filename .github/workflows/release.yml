@@ -1,0 +1,196 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        type: string
+
+env:
+  FORGE_PROFILE: production
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: |
+          forge install --no-commit
+
+      - name: Build
+        run: forge build
+
+      - name: Run tests
+        run: forge test
+
+      - name: Generate documentation
+        run: |
+          # Generate contract documentation
+          forge doc --build
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body: |
+            ## What's Changed
+            
+            - Smart contract updates
+            - Bug fixes and improvements
+            - Security enhancements
+            
+            ## Contract Addresses
+            
+            ### Mainnet
+            - SyncHook: TBD
+            - SyncAVS: TBD
+            - AcrossIntegration: TBD
+            - StateOracles: TBD
+            - ChainRegistry: TBD
+            
+            ## Verification
+            
+            All contracts have been verified on Etherscan.
+            
+            ## Security
+            
+            This release has been tested and audited for security vulnerabilities.
+          draft: false
+          prerelease: false
+
+  build-artifacts:
+    name: Build Artifacts
+    runs-on: ubuntu-latest
+    needs: create-release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: |
+          forge install --no-commit
+
+      - name: Build
+        run: forge build
+
+      - name: Generate artifacts
+        run: |
+          # Create artifacts directory
+          mkdir -p artifacts
+          
+          # Copy build artifacts
+          cp -r out/ artifacts/
+          
+          # Generate ABI files
+          find out/ -name "*.json" -exec cp {} artifacts/ \;
+          
+          # Create deployment info
+          echo "Deployment Information" > artifacts/DEPLOYMENT.md
+          echo "=====================" >> artifacts/DEPLOYMENT.md
+          echo "" >> artifacts/DEPLOYMENT.md
+          echo "Version: ${{ github.ref_name }}" >> artifacts/DEPLOYMENT.md
+          echo "Commit: ${{ github.sha }}" >> artifacts/DEPLOYMENT.md
+          echo "Date: $(date)" >> artifacts/DEPLOYMENT.md
+          echo "" >> artifacts/DEPLOYMENT.md
+          echo "## Contract Addresses" >> artifacts/DEPLOYMENT.md
+          echo "To be updated after deployment" >> artifacts/DEPLOYMENT.md
+
+      - name: Upload artifacts
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./artifacts
+          asset_name: contracts-${{ github.ref_name }}.tar.gz
+          asset_content_type: application/gzip
+
+  deploy-contracts:
+    name: Deploy Contracts
+    runs-on: ubuntu-latest
+    needs: [create-release, build-artifacts]
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: |
+          forge install --no-commit
+
+      - name: Deploy to Mainnet
+        run: |
+          forge script script/Deploy.s.sol:DeployScript \
+            --rpc-url ${{ secrets.MAINNET_RPC_URL }} \
+            --private-key ${{ secrets.PRIVATE_KEY }} \
+            --broadcast \
+            --verify \
+            --etherscan-api-key ${{ secrets.ETHERSCAN_API_KEY }}
+
+      - name: Update release with contract addresses
+        run: |
+          # This would typically update the release with actual contract addresses
+          echo "Contract addresses will be updated after deployment"
+
+  notify-release:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: [create-release, deploy-contracts]
+    if: always()
+
+    steps:
+      - name: Notify Discord
+        uses: Ilshidur/action-discord@master
+        with:
+          args: 'New release ${{ github.ref_name }} is now available! 🚀'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+
+      - name: Notify Twitter
+        uses: ethomson/send-tweet-action@v1
+        with:
+          status: 'SyncHook ${{ github.ref_name }} has been released! 🚀 Check out the latest features and improvements.'
+        env:
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}

@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  FORGE_PROFILE: ci
+  FOUNDRY_PROFILE: ci
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: |
+          forge install --no-commit
+
+      - name: Build
+        run: forge build
+
+      - name: Run tests
+        run: forge test --gas-report
+
+      - name: Run fuzz tests
+        run: forge test --match-contract "Fuzz" --fuzz-runs 1000
+
+      - name: Run invariant tests
+        run: forge test --match-contract "Invariant" --fuzz-runs 1000
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: |
+          forge install --no-commit
+
+      - name: Lint Solidity
+        run: |
+          forge fmt --check
+          forge build
+
+      - name: Check for common issues
+        run: |
+          # Check for TODO comments in production code
+          if grep -r "TODO\|FIXME\|HACK" src/ --include="*.sol"; then
+            echo "Found TODO/FIXME/HACK comments in source code"
+            exit 1
+          fi
+
+  security:
+    name: Security
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: |
+          forge install --no-commit
+
+      - name: Run Slither
+        run: |
+          pip install slither-analyzer
+          slither . --exclude-dependencies
+
+      - name: Check for known vulnerabilities
+        run: |
+          # Check for common vulnerability patterns
+          if grep -r "tx\.origin" src/ --include="*.sol"; then
+            echo "Found tx.origin usage - potential security risk"
+            exit 1
+          fi
+          
+          if grep -r "block\.timestamp" src/ --include="*.sol"; then
+            echo "Found block.timestamp usage - review for time manipulation"
+          fi
+
+  gas-optimization:
+    name: Gas Optimization
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: |
+          forge install --no-commit
+
+      - name: Run gas report
+        run: forge test --gas-report
+
+      - name: Check gas limits
+        run: |
+          # Check if any function exceeds reasonable gas limits
+          forge test --gas-report | grep -E "Max.*[0-9]{7,}" && echo "High gas usage detected" || true
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install dependencies
+        run: |
+          forge install --no-commit
+
+      - name: Generate coverage report
+        run: |
+          forge coverage --report lcov
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false

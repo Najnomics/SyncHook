@@ -1,55 +1,18 @@
-# Build stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.23.6-bookworm AS build
 
-# Install build dependencies
-RUN apk add --no-cache git make gcc musl-dev
+WORKDIR /build
 
-# Set working directory
-WORKDIR /app
+# Copy full source
+ADD . /build
 
-# Copy go mod files
-COPY go.mod go.sum ./
+RUN make build
 
-# Download dependencies
-RUN go mod download
+FROM debian:stable-slim
 
-# Copy source code
-COPY . .
+COPY --from=build /build/bin/synchook-performer /usr/local/bin/synchook-performer
 
-# Build the application
-RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o synchook-operator ./cmd/operator
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
-# Final stage
-FROM alpine:latest
-
-# Install runtime dependencies
-RUN apk --no-cache add ca-certificates tzdata
-
-# Create non-root user
-RUN addgroup -g 1001 -S synchook && \
-    adduser -u 1001 -S synchook -G synchook
-
-# Set working directory
-WORKDIR /app
-
-# Copy binary from builder stage
-COPY --from=builder /app/synchook-operator .
-
-# Copy config file
-COPY --from=builder /app/config.yaml .
-
-# Change ownership
-RUN chown -R synchook:synchook /app
-
-# Switch to non-root user
-USER synchook
-
-# Expose port
-EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
-
-# Run the application
-CMD ["./synchook-operator", "start", "--config", "config.yaml"]
+CMD ["/usr/local/bin/synchook-performer"]

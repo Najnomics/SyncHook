@@ -18,12 +18,12 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/synchook/operator/pkg/config"
-	"github.com/synchook/operator/pkg/eigenlayer"
-	"github.com/synchook/operator/pkg/state"
-	"github.com/synchook/operator/pkg/across"
-	"github.com/synchook/operator/pkg/blockchain"
-	"github.com/synchook/operator/pkg/monitoring"
+	"github.com/synchook/synchook-avs/pkg/config"
+	"github.com/synchook/synchook-avs/pkg/eigenlayer"
+	"github.com/synchook/synchook-avs/pkg/state"
+	"github.com/synchook/synchook-avs/pkg/across"
+	"github.com/synchook/synchook-avs/pkg/blockchain"
+	"github.com/synchook/synchook-avs/pkg/monitoring"
 )
 
 const (
