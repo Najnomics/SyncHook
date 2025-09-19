@@ -1,14 +1,20 @@
 server:
   host: "0.0.0.0"
   port: 8080
+  read_timeout: "30s"
+  write_timeout: "30s"
+  idle_timeout: "120s"
 
 database:
   host: "localhost"
   port: 5432
   user: "synchook"
   password: "" # Set via DATABASE_PASSWORD env var
-  dbname: "synchook"
+  dbname: "synchook_avs"
   sslmode: "disable"
+  max_connections: 100
+  max_idle_connections: 10
+  connection_max_lifetime: "1h"
 
 chains:
   - id: 1
@@ -19,7 +25,12 @@ chains:
     sync_avs: "0x1234567890abcdef1234567890abcdef12345678"
     pool_manager: "0x1234567890abcdef1234567890abcdef12345678"
     sync_hook: "0x1234567890abcdef1234567890abcdef12345678"
+    across_integration: "0x1234567890abcdef1234567890abcdef12345678"
+    state_oracles: "0x1234567890abcdef1234567890abcdef12345678"
+    chain_registry: "0x1234567890abcdef1234567890abcdef12345678"
     confirmations: 12
+    gas_price_gwei: 20
+    max_gas_price_gwei: 100
 
   - id: 42161
     name: "Arbitrum"
@@ -29,7 +40,42 @@ chains:
     sync_avs: "0x1234567890abcdef1234567890abcdef12345678"
     pool_manager: "0x1234567890abcdef1234567890abcdef12345678"
     sync_hook: "0x1234567890abcdef1234567890abcdef12345678"
+    across_integration: "0x1234567890abcdef1234567890abcdef12345678"
+    state_oracles: "0x1234567890abcdef1234567890abcdef12345678"
+    chain_registry: "0x1234567890abcdef1234567890abcdef12345678"
     confirmations: 1
+    gas_price_gwei: 0.1
+    max_gas_price_gwei: 1
+
+  - id: 137
+    name: "Polygon"
+    rpc_url: "https://polygon-mainnet.infura.io/v3/YOUR_INFURA_KEY"
+    ws_url: "wss://polygon-mainnet.infura.io/ws/v3/YOUR_INFURA_KEY"
+    private_key: "" # Set via POLYGON_PRIVATE_KEY env var
+    sync_avs: "0x1234567890abcdef1234567890abcdef12345678"
+    pool_manager: "0x1234567890abcdef1234567890abcdef12345678"
+    sync_hook: "0x1234567890abcdef1234567890abcdef12345678"
+    across_integration: "0x1234567890abcdef1234567890abcdef12345678"
+    state_oracles: "0x1234567890abcdef1234567890abcdef12345678"
+    chain_registry: "0x1234567890abcdef1234567890abcdef12345678"
+    confirmations: 2
+    gas_price_gwei: 30
+    max_gas_price_gwei: 100
+
+  - id: 8453
+    name: "Base"
+    rpc_url: "https://base-mainnet.infura.io/v3/YOUR_INFURA_KEY"
+    ws_url: "wss://base-mainnet.infura.io/ws/v3/YOUR_INFURA_KEY"
+    private_key: "" # Set via BASE_PRIVATE_KEY env var
+    sync_avs: "0x1234567890abcdef1234567890abcdef12345678"
+    pool_manager: "0x1234567890abcdef1234567890abcdef12345678"
+    sync_hook: "0x1234567890abcdef1234567890abcdef12345678"
+    across_integration: "0x1234567890abcdef1234567890abcdef12345678"
+    state_oracles: "0x1234567890abcdef1234567890abcdef12345678"
+    chain_registry: "0x1234567890abcdef1234567890abcdef12345678"
+    confirmations: 1
+    gas_price_gwei: 0.001
+    max_gas_price_gwei: 0.1
 
   - id: 10
     name: "Optimism"
@@ -39,7 +85,12 @@ chains:
     sync_avs: "0x1234567890abcdef1234567890abcdef12345678"
     pool_manager: "0x1234567890abcdef1234567890abcdef12345678"
     sync_hook: "0x1234567890abcdef1234567890abcdef12345678"
+    across_integration: "0x1234567890abcdef1234567890abcdef12345678"
+    state_oracles: "0x1234567890abcdef1234567890abcdef12345678"
+    chain_registry: "0x1234567890abcdef1234567890abcdef12345678"
     confirmations: 1
+    gas_price_gwei: 0.001
+    max_gas_price_gwei: 0.1
 
 eigenlayer:
   registry_coordinator: "0x1234567890abcdef1234567890abcdef12345678"
@@ -48,21 +99,44 @@ eigenlayer:
   index_registry: "0x1234567890abcdef1234567890abcdef12345678"
   operator_id: 1
   quorum_number: 0
+  minimum_stake: "1000000000000000000000" # 1000 ETH
+  slashing_threshold: "100000000000000000000" # 100 ETH
 
 across:
   spoke_pool: "0x1234567890abcdef1234567890abcdef12345678"
   hub_pool: "0x1234567890abcdef1234567890abcdef12345678"
   relayer_fee_pct: "0.001" # 0.1%
   max_gas_price: "20000000000" # 20 gwei
+  bridge_fee_bps: 10 # 0.1%
+  max_rebalancing_amount: "1000000000000000000000000" # 1M tokens
+  min_rebalancing_amount: "1000000000000000000000" # 1K tokens
+  rebalancing_cooldown: 100 # blocks
 
 log:
   level: "info"
   format: "json"
   output: "stdout"
+  file: "" # Set to enable file logging
 
 operator:
   state_update_interval: "30s"
-  rebalance_threshold: 0.2 # 20%
+  rebalance_threshold: 0.05 # 5%
   max_rebalance_amount: "1000000000000000000000" # 1000 ETH
   min_rebalance_amount: "1000000000000000000" # 1 ETH
   rebalance_cooldown: "300s" # 5 minutes
+  max_price_deviation: 0.05 # 5%
+  max_liquidity_change: 0.1 # 10%
+  max_time_gap: 300 # 5 minutes
+  minimum_confirmations: 3
+
+monitoring:
+  enable_metrics: true
+  metrics_port: 9090
+  health_check_interval: "10s"
+  alert_webhook: "" # Set to enable Discord/Slack alerts
+
+predictive_analytics:
+  enable: true
+  time_horizon: 3600 # 1 hour in seconds
+  confidence_threshold: 0.7 # 70%
+  max_prediction_interval: 7200 # 2 hours in seconds

@@ -2,14 +2,18 @@
 pragma solidity ^0.8.27;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title SyncHookL2
  * @dev L2 contract for SyncHook cross-chain liquidity synchronization
  * This contract handles L2-specific operations and coordinates with L1 contracts
+ * Part of the SyncHook ecosystem for Uniswap V4 cross-chain liquidity management
  */
-contract SyncHookL2 {
-    string private constant VERSION = "SyncHook L2 v1.0.0";
+contract SyncHookL2 is Ownable, Pausable, ReentrancyGuard {
+    string private constant VERSION = "SyncHook L2 v2.0.0";
     
     // Chain-specific pool state
     struct ChainPoolState {
@@ -22,30 +26,64 @@ contract SyncHookL2 {
         bool isActive;
     }
     
+    // Rebalancing request
+    struct RebalancingRequest {
+        bytes32 poolId;
+        uint32 sourceChainId;
+        uint32 targetChainId;
+        uint256 amount;
+        uint256 priceDeviation;
+        uint64 timestamp;
+        bool isExecuted;
+        bytes32 txHash;
+    }
+    
     // Pool states per chain
     mapping(bytes32 => mapping(uint32 => ChainPoolState)) public chainPoolStates;
+    
+    // Rebalancing requests
+    mapping(bytes32 => RebalancingRequest) public rebalancingRequests;
+    bytes32[] public rebalancingRequestIds;
+    
+    // Chain configuration
+    uint32 public immutable chainId;
+    mapping(uint32 => bool) public supportedChains;
+    uint32[] public supportedChainIds;
     
     // Events
     event ChainPoolStateUpdated(bytes32 indexed poolId, uint32 chainId, uint256 liquidity, uint256 price);
     event LiquidityRebalanced(bytes32 indexed poolId, uint32 fromChainId, uint32 toChainId, uint256 amount);
     event CrossChainTransferCompleted(bytes32 indexed poolId, uint32 chainId, uint256 amount, bytes32 txHash);
+    event RebalancingRequestCreated(bytes32 indexed requestId, bytes32 indexed poolId, uint32 sourceChainId, uint32 targetChainId, uint256 amount);
+    event RebalancingRequestExecuted(bytes32 indexed requestId, bytes32 txHash);
+    event ChainAdded(uint32 indexed chainId);
+    event ChainRemoved(uint32 indexed chainId);
+    event OperatorAuthorized(address indexed operator);
+    event OperatorDeauthorized(address indexed operator);
     
     // Access control
-    address public owner;
     mapping(address => bool) public authorizedOperators;
-    
-    modifier onlyOwner() {
-        require(msg.sender == owner, "SyncHookL2: caller is not the owner");
-        _;
-    }
+    mapping(address => bool) public authorizedValidators;
     
     modifier onlyAuthorized() {
-        require(authorizedOperators[msg.sender] || msg.sender == owner, "SyncHookL2: caller is not authorized");
+        require(
+            authorizedOperators[msg.sender] || 
+            authorizedValidators[msg.sender] || 
+            msg.sender == owner, 
+            "SyncHookL2: caller is not authorized"
+        );
         _;
     }
     
-    constructor() {
-        owner = msg.sender;
+    constructor(uint32 _chainId) Ownable(msg.sender) {
+        chainId = _chainId;
+        
+        // Initialize with supported chains
+        _addSupportedChain(1); // Ethereum
+        _addSupportedChain(42161); // Arbitrum
+        _addSupportedChain(137); // Polygon
+        _addSupportedChain(8453); // Base
+        _addSupportedChain(10); // Optimism
     }
     
     /**

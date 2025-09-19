@@ -1,43 +1,62 @@
-# SyncHook Operator
+# SyncHook AVS (Actively Validated Service)
 
-The SyncHook Operator is a Go-based service that monitors and coordinates cross-chain liquidity synchronization across multiple blockchains using EigenLayer AVS and Across Protocol integration.
+The SyncHook AVS is a comprehensive Go-based service that provides cross-chain liquidity synchronization across multiple blockchains using EigenLayer's Actively Validated Service infrastructure and Across Protocol integration. This service acts as the backend operator for the SyncHook ecosystem, monitoring Uniswap V4 pools and coordinating liquidity rebalancing across chains.
 
 ## Features
 
-- **Multi-chain Monitoring**: Monitors pool states across multiple blockchains
-- **EigenLayer Integration**: Submits state updates to EigenLayer AVS
-- **Automatic Rebalancing**: Automatically rebalances liquidity when price deviations are detected
-- **Across Protocol Integration**: Uses Across Protocol for cross-chain transfers
-- **High Availability**: Designed for production deployment with health checks and graceful shutdown
-- **Configurable**: Highly configurable via YAML configuration files
+- **Uniswap V4 Integration**: Monitors and responds to Uniswap V4 hook events across multiple chains
+- **EigenLayer AVS**: Leverages EigenLayer's decentralized validation network for secure cross-chain state synchronization
+- **Multi-chain Monitoring**: Real-time monitoring of pool states across Ethereum, Arbitrum, Polygon, Base, and Optimism
+- **Intelligent Rebalancing**: AI-powered liquidity rebalancing using predictive analytics and state aggregation
+- **Across Protocol Integration**: Seamless cross-chain transfers using Across Protocol's bridge infrastructure
+- **High Availability**: Production-ready with health checks, graceful shutdown, and comprehensive monitoring
+- **Configurable**: Highly configurable via YAML configuration files with environment variable support
 
 ## Architecture
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Ethereum      │    │    Arbitrum     │    │   Optimism      │
-│   (Chain 1)     │    │   (Chain 42161) │    │   (Chain 10)    │
-└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
-          │                      │                      │
-          └──────────────────────┼──────────────────────┘
-                                 │
-                    ┌─────────────┴─────────────┐
-                    │     SyncHook Operator     │
-                    │  ┌─────────────────────┐  │
-                    │  │      Monitor        │  │
-                    │  └─────────────────────┘  │
-                    │  ┌─────────────────────┐  │
-                    │  │    Rebalancer       │  │
-                    │  └─────────────────────┘  │
-                    │  ┌─────────────────────┐  │
-                    │  │   EigenLayer AVS    │  │
-                    │  └─────────────────────┘  │
-                    └─────────────┬─────────────┘
-                                  │
-                    ┌─────────────┴─────────────┐
-                    │     Across Protocol       │
-                    │   (Cross-chain Bridge)    │
-                    └───────────────────────────┘
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Ethereum      │    │    Arbitrum     │    │   Polygon       │    │     Base        │
+│   (Chain 1)     │    │   (Chain 42161) │    │   (Chain 137)   │    │   (Chain 8453)  │
+│                 │    │                 │    │                 │    │                 │
+│ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
+│ │ Uniswap V4  │ │    │ │ Uniswap V4  │ │    │ │ Uniswap V4  │ │    │ │ Uniswap V4  │ │
+│ │ SyncHook    │ │    │ │ SyncHook    │ │    │ │ SyncHook    │ │    │ │ SyncHook    │ │
+│ └─────────────┘ │    │ └─────────────┘ │    │ └─────────────┘ │    │ └─────────────┘ │
+└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
+          │                      │                      │                      │
+          └──────────────────────┼──────────────────────┼──────────────────────┘
+                                 │                      │
+                    ┌─────────────┴─────────────┐      │
+                    │     SyncHook AVS          │      │
+                    │  ┌─────────────────────┐  │      │
+                    │  │   State Monitor     │  │      │
+                    │  └─────────────────────┘  │      │
+                    │  ┌─────────────────────┐  │      │
+                    │  │ Predictive Analytics│  │      │
+                    │  └─────────────────────┘  │      │
+                    │  ┌─────────────────────┐  │      │
+                    │  │ State Aggregator    │  │      │
+                    │  └─────────────────────┘  │      │
+                    │  ┌─────────────────────┐  │      │
+                    │  │ EigenLayer AVS      │  │      │
+                    │  └─────────────────────┘  │      │
+                    └─────────────┬─────────────┘      │
+                                  │                    │
+                    ┌─────────────┴─────────────┐      │
+                    │     Across Protocol       │      │
+                    │   (Cross-chain Bridge)    │      │
+                    └───────────────────────────┘      │
+                                                       │
+                    ┌─────────────────────────────────┴─────────────┐
+                    │              Optimism                         │
+                    │              (Chain 10)                       │
+                    │                                               │
+                    │ ┌─────────────────────────────────────────┐ │
+                    │ │            Uniswap V4                   │ │
+                    │ │            SyncHook                     │ │
+                    │ └─────────────────────────────────────────┘ │
+                    └─────────────────────────────────────────────┘
 ```
 
 ## Quick Start
@@ -47,14 +66,16 @@ The SyncHook Operator is a Go-based service that monitors and coordinates cross-
 - Go 1.21 or later
 - Docker and Docker Compose
 - PostgreSQL (for production)
+- EigenLayer operator registration
 - Private keys for each chain you want to monitor
+- Access to Uniswap V4 testnet/mainnet
 
 ### Installation
 
-1. Clone the repository:
+1. Clone the SyncHook repository:
 ```bash
-git clone https://github.com/synchook/synchook-operator.git
-cd synchook-operator
+git clone https://github.com/synchook/synchook.git
+cd synchook/AVS
 ```
 
 2. Install dependencies:
@@ -62,7 +83,7 @@ cd synchook-operator
 make deps
 ```
 
-3. Configure the operator:
+3. Configure the AVS:
 ```bash
 cp config.yaml.example config.yaml
 # Edit config.yaml with your settings
@@ -70,6 +91,7 @@ cp config.yaml.example config.yaml
 
 4. Build and run:
 ```bash
+make build
 make run
 ```
 

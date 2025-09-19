@@ -1,11 +1,14 @@
-module github.com/synchook/synchook-avs
+module github.com/synchook/synchook/AVS
 
-go 1.23.6
+go 1.21.5
 
 require (
 	github.com/Layr-Labs/hourglass-monorepo/ponos v0.0.0-20250819223025-195764c9457a
 	github.com/Layr-Labs/protocol-apis v1.17.0
+	github.com/ethereum/go-ethereum v1.13.5
 	github.com/olekukonko/tablewriter v1.0.9
+	github.com/sirupsen/logrus v1.9.3
+	github.com/spf13/cobra v1.8.0
 	github.com/urfave/cli/v2 v2.27.7
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.71.1
